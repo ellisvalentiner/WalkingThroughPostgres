@@ -1,0 +1,16 @@
+@import url(https://fonts.googleapis.com/css?family=Lato);
+@import url(https://fonts.googleapis.com/css?family=Merriweather:400,700,400italic);
+@import url(https://fonts.googleapis.com/css?family=Fira+Mono:400,700);
+
+body { font-family: 'Merriweather', 'Palatino Linotype', 'Book Antiqua', Palatino, 'Microsoft YaHei', 'Songti SC', serif; }
+h1, h2, h3 {
+  font-family: 'Lato';
+  font-weight: normal;
+}
+.remark-code, .remark-inline-code { font-family: 'Fira Mono', 'Lucida Console', Monaco, monospace; }
+
+.title-slide {
+  background: linear-gradient(rgba(0,0,0,.8), rgba(0,0,0,.8)),
+    url("../images/5.jpg");
+  background-size: cover;
+}

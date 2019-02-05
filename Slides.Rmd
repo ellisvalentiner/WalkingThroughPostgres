@@ -1,0 +1,107 @@
+---
+title: "Introduction to Postgres"
+author: "Ellis Valentiner"
+date: "Wed Mar. 6th, 2019"
+output:
+  xaringan::moon_reader:
+    css: ["default", "css/custom.css"]
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: '16:9'
+editor_options: 
+  chunk_output_type: console
+---
+class: center, middle
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE, crayon.enabled = TRUE)
+```
+
+> ## "_PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance._"
+
+.right[
+www.postgresql.org
+]
+
+???
+
+ACID compliant (Atomicity, Consistency, Isolation, Durability)
+
+---
+
+License
+
+```{r, eval=FALSE}
+PostgreSQL is released under the PostgreSQL License, a liberal Open Source
+license, similar to the BSD or MIT licenses.
+
+PostgreSQL Database Management System
+(formerly known as Postgres, then as Postgres95)
+
+Portions Copyright © 1996-2019, The PostgreSQL Global Development Group
+
+Portions Copyright © 1994, The Regents of the University of California
+
+{{Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose, without fee, and without a written agreement is
+hereby granted, provided that the above copyright notice and this paragraph and
+the following two paragraphs appear in all copies.}}
+
+IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY PARTY FOR
+DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST
+PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF
+THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE. THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND
+THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
+UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+```
+
+---
+class: center, middle
+
+# Postgres in the Cloud
+
+<image src="images/ms_aws_google_logos.jpg" height="250px"/>
+
+<image src="images/DigitalOcean.svg.png" width="200px"/> <image src="images/heroku-logo-solid-purple.svg" width="200"/>
+
+???
+
+Binaries available:
+
+* FreeBSD
+* OpenBSD
+* Red Hat
+* Debian
+* Ubuntu
+* SuSE
+* OpenSuSE
+* macOS
+* Solaris
+* Windows
+
+---
+
+# Hypothetical Problem
+
+
+
+---
+class: center, middle, inverse
+
+# Demo
+
+---
+
+# Closing
+
+---
+class: center, middle, inverse
+
+# Thanks!
