@@ -10,7 +10,34 @@ h1, h2, h3 {
 .remark-code, .remark-inline-code { font-family: 'Fira Mono', 'Lucida Console', Monaco, monospace; }
 
 .title-slide {
-  background: linear-gradient(rgba(0,0,0,.8), rgba(0,0,0,.8)),
-    url("../images/5.jpg");
+  background: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.7)),
+    url("../images/Kruger.jpg");
   background-size: cover;
+}
+
+.slide-2 {
+  background: linear-gradient(to right, rgba(255,255,255,.9), rgba(255,255,255,.4)), url("../images/slide2.jpg");
+  background-position: center;
+}
+
+.smoke {
+  color: #3c3c3c;
+}
+.pink {
+  color: #ff598f;
+}
+.orange {
+  color: #fd8a5e;
+}
+.yellow {
+  color: #e0e300;
+}
+.blue {
+  color: #01dddd;
+}
+.turquoise {
+  color: #00bfaf;
+}
+.shadow {
+  text-shadow: 3px 3px 12px #7c7c7c;
 }
