@@ -9,17 +9,23 @@ h1, h2, h3 {
 }
 .remark-code, .remark-inline-code { font-family: 'Fira Mono', 'Lucida Console', Monaco, monospace; }
 
+.title-slide h1 {
+  font-size: 80px;
+}
+
+body {
+  font-size: 2vw !important;
+}
+
 .title-slide {
-  background: linear-gradient(rgba(0,0,0,.3), rgba(0,0,0,.7)),
-    url("../images/Kruger.jpg");
+  background: linear-gradient(to top, #434343ee, #000000cc),
+    url("https://cdn1.medicalnewstoday.com/content/images/articles/322/322736/elephant-from-the-front.jpg");
   background-size: cover;
 }
 
-.slide-2 {
-  background: linear-gradient(to right, rgba(255,255,255,.9), rgba(255,255,255,.4)), url("../images/slide2.jpg");
-  background-position: center;
+.accent-pink {
+  color: #E91E63;
 }
-
 .smoke {
   color: #3c3c3c;
 }
@@ -39,5 +45,5 @@ h1, h2, h3 {
   color: #00bfaf;
 }
 .shadow {
-  text-shadow: 3px 3px 12px #7c7c7c;
+  text-shadow: 0px 0px 12px #7c7c7c;
 }

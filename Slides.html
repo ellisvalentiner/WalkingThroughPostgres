@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Introduction to Postgres</title>
+    <title>Walking Through Postgres</title>
     <meta charset="utf-8">
     <meta name="author" content="Ellis Valentiner" />
     <link href="libs/remark-css/default.css" rel="stylesheet" />
@@ -11,19 +11,20 @@
     <textarea id="source">
 class: center, middle, inverse, title-slide
 
-# Introduction to Postgres
+# Walking Through Postgres
 ### Ellis Valentiner
 ### Wed Mar. 6th, 2019
 
 ---
 
-class: center, middle, slide-2
+class: center, middle, shadow
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #ffffffD9, #ffffff73), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
 
 
 
-.shadow[
-&gt; ## "_PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance._"
-]
+&gt; ## _"PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance."_
 
 .right[
 www.postgresql.org
@@ -34,20 +35,26 @@ www.postgresql.org
 ACID compliant (Atomicity, Consistency, Isolation, Durability)
 
 ---
-class: middle, inverse, shadow
-background-image: url("images/African.jpg")
+class: middle, inverse
 background-position: center
 background-size: cover
+background-image: linear-gradient(to bottom, #0000008c, #000000d9), url("https://kids.nationalgeographic.com/content/dam/kids/photos/animals/Mammals/A-G/african-elephant-eating.adapt.945.1.jpg")
 
-&gt; ## _2017 and 2018 DBMS of the Year_
+&gt; ## _"PostgreSQL is the database management system that gained more popularity in our DB-Engines Ranking within the last year than any of the other 343 monitored systems._
+
+&gt; ## .accent-pink[_We thus declare PostgreSQL as the DBMS of the Year 2018.]"_
 
 .right[
 db-engines.com
 ]
 
-&gt; ## _2nd Most Loved, 3rd Most Wanted_
+---
+class: left, bottom, shadow
+background-position: top
+background-size: contain
+background-image: url("images/stack-overflow.png")
 
-.right[
+.small[
 2018 Stack Overflow Developer Survey
 ]
 
@@ -89,9 +96,43 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 ```
 
 ---
-background-image: url("images/postgres-website.png")
+class: center, middle
 background-size: cover
 background-position: center
+background-image: url("images/oracle.png")
+
+--
+class: center, middle, inverse
+background-size: cover
+background-position: center
+background-image: linear-gradient(#000000c3, #000000c3), url("images/oracle.png")
+
+### .accent-pink[You may not disclose results of any Program benchmark tests without Oracle’s prior consent.]
+
+???
+
+License for another "popular" database
+
+Notice all of the restrictions
+
+Other big companies to this too
+
+---
+class: center, middle, inverse
+background-size: cover
+background-position: center
+--background-image: linear-gradient(#000000c3, #000000c3)
+
+&gt; ## _"So how do I get my hands on Postgres?"_
+
+.right[
+— You (right now)
+]
+
+---
+background-size: cover
+background-position: center
+background-image: url("images/postgres-website.png")
 
 ???
 
@@ -111,29 +152,122 @@ Binaries available:
 ---
 class: center, middle
 
-# Postgres in the Cloud
-
 &lt;image src="images/ms_aws_google_logos.jpg" height="250px"/&gt;
 
 &lt;image src="images/DigitalOcean.svg.png" width="200px"/&gt; &lt;image src="images/heroku-logo-solid-purple.svg" width="200"/&gt;
 
 ---
-
-# Hypothetical Problem
-
-
-
----
-class: center, middle, inverse
-background-image: url("images/Bandipur.jpg")
 background-position: center
 background-size: cover
 
+# .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
+
+.left[
+### Basic verbs:
+
+#### `INSERT` - Create
+#### `SELECT` - Read
+#### `UPDATE` - Update
+#### `DELETE` - Delete
+]
+.right[
+### Things:
+
+#### `TABLE` - 2D data container
+#### `RECORD` - a table row
+#### `SCHEMA` - foo
+]
+
+???
+
+Developed at IBM in 1974
+
+"Released" in 1986 as American National Standards Institute (ANSI) and ISO standards.
+
+Updated in 1989, 1992, 1996, 1999, 2003, 2006, 2008, 2011, and 2016
+
+---
+class: center, middle, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+
+# Example 1: DNS Data
+
+---
+class: top, left, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+
+# Background
+
+### We have a client who monitors DNS queries on their network.
+
+--
+
+### Our client wants a database to store the DNS queries.
+
+--
+
+### Finally, our client wants us to query the database for all DNS queries to hosts in China.
+
+---
+class: top, left, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+
+# Our Tasks
+
+--
+### 1. Create a new Postgres database
+
+--
+
+### 2. Create a new schema and tables
+
+--
+
+### 3. Load historic data from the client
+
+--
+
+### 4. Query the database
+
+--
+
+### 5. ???
+
+### 6. Profit
+
+---
+class: center, middle, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+
 # Demo
+
+---
+name: Hands On
+class: center, middle, inverse
+background-position: center
+background-image: linear-gradient(to top, #666491, #1B2964)
+
+# Example 2: Stock Market Data
 
 ???
 
 Photo by Yathin S Krishnappa. Downloaded from Wikimedia. Licensed under the Creative Commons Attribution-Share Alike 3.0 Unported license.
+
+Arrays, Enum, JSON(B), GIN
+
+---
+
+# Resources
+
+https://www.citusdata.com/
 
 ---
 
@@ -144,9 +278,10 @@ class: center, middle, inverse
 
 # Thanks!
 
-???
+---
+class: center, middle, inverse
 
-Arrays, Enum, JSON(B), GIN
+# Questions?
     </textarea>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
 <script>var slideshow = remark.create({

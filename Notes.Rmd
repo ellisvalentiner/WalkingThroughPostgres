@@ -1,0 +1,353 @@
+---
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+# Notes
+
+These are my notes for the "Introduction to Postgres" talk at the Ann Arbor Computer Society Meetup on March 6th.
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(
+  eval = FALSE
+)
+```
+
+## Installing Postgres
+
+The very first thing we have to do is create a new database cluster.
+
+I'm going to use AWS RDS Postgres to host my database.
+
+While that is starting up I'll show how to run a Postgres database locally.
+
+### System Specfic Instructions
+
+#### macOS
+
+Install using EnterpriseDB, BigSQL, Postgres.app, Fink, MacPorts, or Homebrew
+
+```{bash}
+brew install postgres
+brew services start postgres
+```
+#### Windows
+
+EnterpriseDB, BigSQL
+
+#### Ubuntu
+
+Install using EnterpriseDB or PostgreSQL Apt Repository
+
+```{bash}
+sudo apt install postgresql
+sudo -u postgres psql
+```
+
+#### Docker
+
+```{bash}
+docker run \
+  --name postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -v /tmp/postgresdb:/var/lib/postgresql/data \
+  postgres:latest
+```
+
+If you use Docker to run your database be sure to persist the `PGDATA` directory _outside_ of the Docker container!
+
+### General
+
+The PostgreSQL database cluster is a collection of databases managed by a single server instance.
+
+`pg_ctl` is a utility for initializing a PostgreSQL database cluster, starting, stopping, or restarting the PostgreSQL database server, or displaying the status of a running server.
+
+We can use `pg_ctl` to initialize a new database:
+
+```{bash}
+pg_ctl initdb --pgdata=/Users/${USER}/postgres_demo
+```
+
+The `--pgdata` flag lets us specify the data directory for this Postgres database.
+
+After we've created the database we can start it:
+
+```{bash}
+pg_ctl -D /Users/${USER}/postgres_demo -l logfile start
+```
+
+Once our database has started up we can connect to it using the `psql` (default) or `pgcli` command line utilities.
+
+```{bash}
+psql postgres_demo
+```
+
+By default the PostgreSQL database cluster has several databases and we can view them by specifying the `-l` flag:
+
+```{bash}
+psql -X -l
+```
+
+Note that I use the `-X` flag to tell `psql` to ignore my startup file (.psqlrc).
+
+#### Creating a new database
+
+We just created a new database cluster, which contains several databases. However in the future we may want to create additional databases.
+
+Use the `createdb` command to create a new database in the PostgreSQL database cluster.
+
+```{bash}
+createdb project_db
+psql -X -l
+```
+
+#### Enabling external connections
+
+So far we've just been interacting with a database running locally, but what if we wanted to configure a database running on a remote server?
+
+There are two important files that need to be modified to allow external clients to connect to the database.
+
+* `postgresql.conf` - Specifies the configuration for the server
+
+* `pg_hba.conf` - Specifies the configuration file for host-based authentication
+
+Modify `pg_hba.conf`:
+
+```{text}
+host    project_db  all 0.0.0.0/0   trust
+```
+
+Modify `postgresql.conf`:
+
+```{bash}
+listen_addresses = '*'
+```
+
+Then restart the database
+
+```{bash}
+pg_ctl -D postgres_demo restart
+```
+
+Now external clients should be able to connect to the database.
+
+Note that you'd typically configure the server to accept connections only from within your network, VPC, load balancer, etc.
+
+## Connecting to Databases
+
+There are a few different ways to form connections using the CLI client (i.e. `psql`).
+
+First, if the database is running locally you can just use the database name:
+
+```{bash}
+psql postgres_demo
+```
+
+Second, you can specify connection parameters using various flags:
+
+```{bash}
+psql -U user -h localhost -p 5432 -d postgres_demo
+```
+
+Third, you can set and use environment variables:
+
+````{bash}
+PGDATABASE=postgres_demo psql
+```
+
+Environment variables:
+
+* `PGDATABASE`
+* `PGHOST`
+* `PGPORT`
+* `PGUSER`
+* `PGPASSWORD` (probably don't specify this one)
+
+Fourth, you can use a connection string:
+
+```{bash}
+psql postgres://user:pwd@host:port/dbname
+```
+
+Lastly, you can use any combination of these with a .pgpass file.
+
+Add entries to .pgpass file like this:
+
+```{text}
+hostname:port:database:username:password
+```
+
+You can use `*` to wildcard all or part of a field.
+
+***
+
+Switching back to AWS RDS instance.
+
+# Example 1: DNS
+
+Now that we know how to connect to our RDS instance, the next step is to setup tables for our data.
+
+## Create tables
+
+We're going to create the following tables:
+
+* `blocks` - IP address blocks
+* `locations` - cities
+* `domains` - domain names resolved to IP address
+* `queries` - DNS queries on the client's network
+
+Tables are created using the `CREATE TABLE` command.
+
+```{sql}
+CREATE TABLE blocks (
+  network                        CIDR,
+  geoname_id                     INTEGER,
+  registered_country_geoname_id  INTEGER,
+  represented_country_geoname_id INTEGER,
+  is_anonymous_proxy             BOOLEAN,
+  is_satellite_provider          BOOLEAN,
+  postal_code                    TEXT,
+  latitude                       NUMERIC,
+  longitude                      NUMERIC,
+  accuracy_radius                INTEGER
+);
+
+CREATE TABLE locations (
+  geoname_id             INTEGER,
+  locale_code            VARCHAR(2),
+  continent_code         VARCHAR(2),
+  continent_name         VARCHAR(13),
+  country_iso_code       VARCHAR(2),
+  country_name           VARCHAR(44),
+  subdivision_1_iso_code VARCHAR(3),
+  subdivision_1_name     VARCHAR(52),
+  subdivision_2_iso_code VARCHAR(3),
+  subdivision_2_name     VARCHAR(38),
+  city_name              VARCHAR(63),
+  metro_code             INTEGER,
+  time_zone              VARCHAR(30),
+  is_in_european_union   BOOLEAN
+);
+
+CREATE TABLE domains (
+  domain  TEXT,
+  address INET,
+  created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE queries (
+  id        INTEGER,
+  timestamp TIMESTAMP,
+  type      INTEGER,
+  status    INTEGER,
+  domain    TEXT,
+  client    INET,
+  forward   INET
+);
+```
+
+## Add data
+
+You can add data using the `\copy` command.
+
+In this case the files we want to load are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.
+
+```{sql}
+\copy blocks FROM 'GeoLite2-City-Blocks-IPv4.csv' DELIMITER ',' CSV HEADER;
+\copy blocks FROM 'GeoLite2-City-Blocks-IPv6.csv' DELIMITER ',' CSV HEADER;
+\copy locations FROM 'GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
+```
+
+## Add indexes
+
+After we've added our data, we can add indexes to the tables. We load the data before adding indexes because indexes slow write operations and we wanted to load the data as quickly as possible. In the future we'll be performing fewer write operations at once.
+
+The most basic way to create an index is as follows:
+
+```{sql}
+CREATE INDEX blocks_geoname_idx ON blocks (geoname_id);
+```
+
+This creates a simple b-tree index on the `geoname_id` column in the `blocks` table.
+
+Sometimes we vant to use a different index type.
+
+For example, because we are working with network addresses we can use a `GIST` index (i.e. Generalized Search Tree):
+
+```{sql}
+CREATE INDEX blocks_network_idx ON blocks USING GIST (network inet_ops);
+```
+
+We can make similar indexes on other tables:
+
+```{sql}
+CREATE UNIQUE INDEX locations_geoname_idx ON locations (geoname_id);
+CREATE INDEX locations_country_name_idx ON locations (country_name);
+
+CREATE UNIQUE INDEX domains_domain_idx ON domains (domain);
+CREATE INDEX domains_address_idx ON domains USING GIST (address);
+
+CREATE UNIQUE INDEX queries_id_idx ON queries (id);
+CREATE INDEX queries_domain_index ON queries (domain);
+CREATE INDEX queries_timestamp_idx ON queries (timestamp);
+CREATE INDEX queries_day_timestamp_idx ON queries (DATE_TRUNC('d', timestamp));
+```
+
+These indexes can drastically improve query performance.
+
+## Querying the data
+
+```{sql}
+SELECT
+  domain,
+  n,
+  address,
+  network,
+  (latitude, longitude) AS coordiantes,
+  locations.country_iso_code,
+  city_name AS city,
+  subdivision_1_name AS state,
+  country_name AS country,
+  continent_name AS continent
+FROM (
+       SELECT
+         domain,
+         COUNT(id) AS n
+       FROM queries
+       WHERE
+         status IN (2, 3)
+       GROUP BY domain
+       ORDER BY n DESC
+     ) domain_counts
+     JOIN domains USING (domain)
+     JOIN blocks ON (domains.address << blocks.network)
+     JOIN locations USING (geoname_id)
+ORDER BY n DESC;
+```
+
+
+***
+
+
+# Basic Administration
+
+### Creating Roles
+
+Roles are "users" and "groups".
+
+```{sql}
+CREATE ROLE dbadmin NOLOGIN NOINHERIT SUPERUSER;
+CREATE ROLE bob;
+GRANT dbadmin TO bob;
+```
+
+```{sql}
+CREATE ROLE datascientist;
+ALTER DEFAULT PERMISSIONS IN SCHEMA public GRANT SELECT ON TABLES TO datascientist;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO datascientist;
+CREATE ROLE julia LOGIN PASSWORD 'hunter1';
+GRANT datascientist TO julia;
+```
