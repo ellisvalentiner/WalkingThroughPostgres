@@ -110,7 +110,7 @@ code > span.ot { color: #007020; }
 <section class="main-content">
 <div id="notes" class="section level1">
 <h1>Notes</h1>
-<p>These are my notes for the “Introduction to Postgres” talk at the Ann Arbor Computer Society Meetup on March 6th.</p>
+<p>These are my notes for the “Walking Through Postgres” talk at the Ann Arbor Computer Society Meetup on March 6th.</p>
 <div id="installing-postgres" class="section level2">
 <h2>Installing Postgres</h2>
 <p>The very first thing we have to do is create a new database cluster.</p>
@@ -223,35 +223,36 @@ code > span.ot { color: #007020; }
 <li><code>domains</code> - domain names resolved to IP address</li>
 <li><code>queries</code> - DNS queries on the client’s network</li>
 </ul>
+<p>Tables are created using the <code>CREATE TABLE</code> command.</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> blocks (</a>
-<a class="sourceLine" id="cb17-2" title="2">  <span class="kw">network</span> cidr,</a>
-<a class="sourceLine" id="cb17-3" title="3">  geoname_id <span class="dt">int</span>,</a>
-<a class="sourceLine" id="cb17-4" title="4">  registered_country_geoname_id <span class="dt">int</span>,</a>
-<a class="sourceLine" id="cb17-5" title="5">  represented_country_geoname_id <span class="dt">int</span>,</a>
-<a class="sourceLine" id="cb17-6" title="6">  is_anonymous_proxy <span class="dt">boolean</span>,</a>
-<a class="sourceLine" id="cb17-7" title="7">  is_satellite_provider <span class="dt">boolean</span>,</a>
-<a class="sourceLine" id="cb17-8" title="8">  postal_code text,</a>
-<a class="sourceLine" id="cb17-9" title="9">  latitude <span class="dt">numeric</span>,</a>
-<a class="sourceLine" id="cb17-10" title="10">  longitude <span class="dt">numeric</span>,</a>
-<a class="sourceLine" id="cb17-11" title="11">  accuracy_radius <span class="dt">int</span></a>
+<a class="sourceLine" id="cb17-2" title="2">  <span class="kw">network</span>                        CIDR,</a>
+<a class="sourceLine" id="cb17-3" title="3">  geoname_id                     <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb17-4" title="4">  registered_country_geoname_id  <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb17-5" title="5">  represented_country_geoname_id <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb17-6" title="6">  is_anonymous_proxy             <span class="dt">BOOLEAN</span>,</a>
+<a class="sourceLine" id="cb17-7" title="7">  is_satellite_provider          <span class="dt">BOOLEAN</span>,</a>
+<a class="sourceLine" id="cb17-8" title="8">  postal_code                    TEXT,</a>
+<a class="sourceLine" id="cb17-9" title="9">  latitude                       <span class="dt">NUMERIC</span>,</a>
+<a class="sourceLine" id="cb17-10" title="10">  longitude                      <span class="dt">NUMERIC</span>,</a>
+<a class="sourceLine" id="cb17-11" title="11">  accuracy_radius                <span class="dt">INTEGER</span></a>
 <a class="sourceLine" id="cb17-12" title="12">);</a>
 <a class="sourceLine" id="cb17-13" title="13"></a>
 <a class="sourceLine" id="cb17-14" title="14"><span class="kw">CREATE</span> <span class="kw">TABLE</span> locations (</a>
-<a class="sourceLine" id="cb17-15" title="15">  geoname_id <span class="dt">int</span>,</a>
-<a class="sourceLine" id="cb17-16" title="16">  locale_code text,</a>
-<a class="sourceLine" id="cb17-17" title="17">  continent_code text,</a>
-<a class="sourceLine" id="cb17-18" title="18">  continent_name text,</a>
-<a class="sourceLine" id="cb17-19" title="19">  country_iso_code text,</a>
-<a class="sourceLine" id="cb17-20" title="20">  country_name text,</a>
-<a class="sourceLine" id="cb17-21" title="21">  subdivision_1_iso_code text,</a>
-<a class="sourceLine" id="cb17-22" title="22">  subdivision_1_name text,</a>
-<a class="sourceLine" id="cb17-23" title="23">  subdivision_2_iso_code text,</a>
-<a class="sourceLine" id="cb17-24" title="24">  subdivision_2_name text,</a>
-<a class="sourceLine" id="cb17-25" title="25">  city_name text,</a>
-<a class="sourceLine" id="cb17-26" title="26">  metro_code <span class="dt">int</span>,</a>
-<a class="sourceLine" id="cb17-27" title="27">  <span class="kw">time_zone</span> text,</a>
-<a class="sourceLine" id="cb17-28" title="28">  is_in_european_union <span class="dt">boolean</span>)</a>
-<a class="sourceLine" id="cb17-29" title="29">;</a>
+<a class="sourceLine" id="cb17-15" title="15">  geoname_id             <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb17-16" title="16">  locale_code            <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb17-17" title="17">  continent_code         <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb17-18" title="18">  continent_name         <span class="dt">VARCHAR</span>(<span class="dv">13</span>),</a>
+<a class="sourceLine" id="cb17-19" title="19">  country_iso_code       <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb17-20" title="20">  country_name           <span class="dt">VARCHAR</span>(<span class="dv">44</span>),</a>
+<a class="sourceLine" id="cb17-21" title="21">  subdivision_1_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
+<a class="sourceLine" id="cb17-22" title="22">  subdivision_1_name     <span class="dt">VARCHAR</span>(<span class="dv">52</span>),</a>
+<a class="sourceLine" id="cb17-23" title="23">  subdivision_2_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
+<a class="sourceLine" id="cb17-24" title="24">  subdivision_2_name     <span class="dt">VARCHAR</span>(<span class="dv">38</span>),</a>
+<a class="sourceLine" id="cb17-25" title="25">  city_name              <span class="dt">VARCHAR</span>(<span class="dv">63</span>),</a>
+<a class="sourceLine" id="cb17-26" title="26">  metro_code             <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb17-27" title="27">  <span class="kw">time_zone</span>              <span class="dt">VARCHAR</span>(<span class="dv">30</span>),</a>
+<a class="sourceLine" id="cb17-28" title="28">  is_in_european_union   <span class="dt">BOOLEAN</span></a>
+<a class="sourceLine" id="cb17-29" title="29">);</a>
 <a class="sourceLine" id="cb17-30" title="30"></a>
 <a class="sourceLine" id="cb17-31" title="31"><span class="kw">CREATE</span> <span class="kw">TABLE</span> domains (</a>
 <a class="sourceLine" id="cb17-32" title="32">  <span class="kw">domain</span>  TEXT,</a>
@@ -299,6 +300,34 @@ code > span.ot { color: #007020; }
 <a class="sourceLine" id="cb21-9" title="9"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_timestamp_idx <span class="kw">ON</span> queries (<span class="dt">timestamp</span>);</a>
 <a class="sourceLine" id="cb21-10" title="10"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_day_timestamp_idx <span class="kw">ON</span> queries (DATE_TRUNC(<span class="st">&#39;d&#39;</span>, <span class="dt">timestamp</span>));</a></code></pre></div>
 <p>These indexes can drastically improve query performance.</p>
+</div>
+<div id="querying-the-data" class="section level2">
+<h2>Querying the data</h2>
+<div class="sourceCode" id="cb22"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb22-2" title="2">  <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb22-3" title="3">  n,</a>
+<a class="sourceLine" id="cb22-4" title="4">  address,</a>
+<a class="sourceLine" id="cb22-5" title="5">  <span class="kw">network</span>,</a>
+<a class="sourceLine" id="cb22-6" title="6">  (latitude, longitude) <span class="kw">AS</span> coordiantes,</a>
+<a class="sourceLine" id="cb22-7" title="7">  locations.country_iso_code,</a>
+<a class="sourceLine" id="cb22-8" title="8">  city_name <span class="kw">AS</span> city,</a>
+<a class="sourceLine" id="cb22-9" title="9">  subdivision_1_name <span class="kw">AS</span> state,</a>
+<a class="sourceLine" id="cb22-10" title="10">  country_name <span class="kw">AS</span> country,</a>
+<a class="sourceLine" id="cb22-11" title="11">  continent_name <span class="kw">AS</span> continent</a>
+<a class="sourceLine" id="cb22-12" title="12"><span class="kw">FROM</span> (</a>
+<a class="sourceLine" id="cb22-13" title="13">       <span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb22-14" title="14">         <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb22-15" title="15">         <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb22-16" title="16">       <span class="kw">FROM</span> queries</a>
+<a class="sourceLine" id="cb22-17" title="17">       <span class="kw">WHERE</span></a>
+<a class="sourceLine" id="cb22-18" title="18">         status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb22-19" title="19">       <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb22-20" title="20">       <span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span></a>
+<a class="sourceLine" id="cb22-21" title="21">     ) domain_counts</a>
+<a class="sourceLine" id="cb22-22" title="22">     <span class="kw">JOIN</span> domains <span class="kw">USING</span> (<span class="kw">domain</span>)</a>
+<a class="sourceLine" id="cb22-23" title="23">     <span class="kw">JOIN</span> blocks <span class="kw">ON</span> (domains.address <span class="op">&lt;&lt;</span> blocks.<span class="kw">network</span>)</a>
+<a class="sourceLine" id="cb22-24" title="24">     <span class="kw">JOIN</span> locations <span class="kw">USING</span> (geoname_id)</a>
+<a class="sourceLine" id="cb22-25" title="25"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>;</a></code></pre></div>
 <hr />
 </div>
 </div>
@@ -307,14 +336,14 @@ code > span.ot { color: #007020; }
 <div id="creating-roles" class="section level3">
 <h3>Creating Roles</h3>
 <p>Roles are “users” and “groups”.</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> dbadmin NOLOGIN NOINHERIT SUPERUSER;</a>
-<a class="sourceLine" id="cb22-2" title="2"><span class="kw">CREATE</span> <span class="kw">ROLE</span> bob;</a>
-<a class="sourceLine" id="cb22-3" title="3"><span class="kw">GRANT</span> dbadmin <span class="kw">TO</span> bob;</a></code></pre></div>
-<div class="sourceCode" id="cb23"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> datascientist;</a>
-<a class="sourceLine" id="cb23-2" title="2"><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> PERMISSIONS <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> datascientist;</a>
-<a class="sourceLine" id="cb23-3" title="3"><span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> datascientist;</a>
-<a class="sourceLine" id="cb23-4" title="4"><span class="kw">CREATE</span> <span class="kw">ROLE</span> julia LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a>
-<a class="sourceLine" id="cb23-5" title="5"><span class="kw">GRANT</span> datascientist <span class="kw">TO</span> julia;</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> dbadmin NOLOGIN NOINHERIT SUPERUSER;</a>
+<a class="sourceLine" id="cb23-2" title="2"><span class="kw">CREATE</span> <span class="kw">ROLE</span> bob;</a>
+<a class="sourceLine" id="cb23-3" title="3"><span class="kw">GRANT</span> dbadmin <span class="kw">TO</span> bob;</a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> datascientist;</a>
+<a class="sourceLine" id="cb24-2" title="2"><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> PERMISSIONS <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> datascientist;</a>
+<a class="sourceLine" id="cb24-3" title="3"><span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> datascientist;</a>
+<a class="sourceLine" id="cb24-4" title="4"><span class="kw">CREATE</span> <span class="kw">ROLE</span> julia LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a>
+<a class="sourceLine" id="cb24-5" title="5"><span class="kw">GRANT</span> datascientist <span class="kw">TO</span> julia;</a></code></pre></div>
 </div>
 </div>
 </section>

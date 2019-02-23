@@ -7,7 +7,7 @@ output:
 
 # Notes
 
-These are my notes for the "Introduction to Postgres" talk at the Ann Arbor Computer Society Meetup on March 6th.
+These are my notes for the "Walking Through Postgres" talk at the Ann Arbor Computer Society Meetup on March 6th.
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(
