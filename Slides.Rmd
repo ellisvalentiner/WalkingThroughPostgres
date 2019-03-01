@@ -4,10 +4,11 @@ author: "Ellis Valentiner"
 date: "Wed Mar. 6th, 2019"
 output:
   xaringan::moon_reader:
-    css: ["default", "css/custom.css"]
+    css: ["default", "css/custom.css", "css/terminal.css"]
     lib_dir: libs
     nature:
-      highlightStyle: github
+      beforeInit: ["https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.5/highlight.min.js",  "https://mattboldt.com/demos/typed-js/js/typed.custom.js", "js/custom.js"]
+      highlightStyle: atom-one-dark
       highlightLines: true
       countIncrementalSlides: false
       ratio: '16:9'
@@ -65,7 +66,7 @@ DB-Engines is an initiative to collect and present information on database manag
 
 License
 
-```{text, eval=FALSE}
+```{plaintext, eval=FALSE}
 PostgreSQL is released under the PostgreSQL License, a liberal Open Source
 license, similar to the BSD or MIT licenses.
 
@@ -155,32 +156,27 @@ class: center, middle
 <image src="images/DigitalOcean.svg.png" width="200px"/> <image src="images/heroku-logo-solid-purple.svg" width="200"/>
 
 ---
+class: top, left, inverse
 background-position: center
 background-size: cover
+background-image: linear-gradient(to right, #000000c3, #000000c3), url('https://www.klaustiedge.com/wp-content/uploads/W60_Color_Elephant-Herd%C2%A9-AfricanFineArt.co_.za_.jpg')
 
-# SQL Refresher
+# .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
 
-### .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
-.pull-left[
-### Basic verbs:
+<!-- <img src="images/SELECT.gif" height="400"/> -->
 
-#### `INSERT` - Create
-#### `SELECT` - Read
-#### `UPDATE` - Update
-#### `DELETE` - Delete
-]
-.pull-right[
-### Things:
-
-#### `TABLE` - 2D data container
-#### `RECORD` - a table row
-#### `SCHEMA` - group of tables
-#### `DATABASE` - group of schemas
-]
+<div class="text-editor-wrap">
+	<div class="title-bar" style="color:#000000;">
+	  <span class="title">postgres — zsh — 16x<span class="terminal-height">9</span></span>
+  </div>
+	<div class="text-body">
+		psql> <span id="typed"></span>
+	</div>
+</div>
 
 ???
 
-Developed at IBM in 1974
+SQL was developed at IBM in 1974
 
 "Released" in 1986 as American National Standards Institute (ANSI) and ISO standards.
 
@@ -192,7 +188,7 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
-# Example 1: DNS Data
+# Example: DNS Data
 
 ---
 class: top, left, inverse
@@ -202,15 +198,15 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 
 # Background
 
-### We have a client who monitors DNS queries on their network.
+### We have a client who monitors DNS queries on their network to block malicious traffic.
 
 --
 
-### Our client wants a database to store the DNS queries.
+### Our client wants a database to store DNS queries.
 
 --
 
-### Finally, our client wants us to query the database for all DNS queries to hosts in China.
+### Finally, our client wants us to query the database for all DNS queries to hosts outside of North America.
 
 ---
 class: top, left, inverse
@@ -250,18 +246,33 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 # Demo
 
 ---
-name: Hands On
 class: center, middle, inverse
 background-position: center
-background-image: linear-gradient(to top, #666491, #1B2964)
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
-# Example 2: Stock Market Data
+# Example: Stock Market Data
 
 ???
 
 Photo by Yathin S Krishnappa. Downloaded from Wikimedia. Licensed under the Creative Commons Attribution-Share Alike 3.0 Unported license.
 
 Arrays, Enum, JSON(B), GIN
+
+---
+class: top, left, inverse
+background-position: center
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
+
+# Stock Market Data
+
+### Daily S&P 500 prices for 1998 through July 31st, 2013.
+
+---
+class: center, middle, inverse
+background-position: center
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
+
+# Demo
 
 ---
 

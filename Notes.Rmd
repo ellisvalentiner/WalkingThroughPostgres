@@ -19,7 +19,9 @@ knitr::opts_chunk$set(
 
 The very first thing we have to do is create a new database cluster.
 
-I'm going to use AWS RDS Postgres to host my database.
+I'm going to use AWS RDS Postgres to host my database:
+
+[https://console.aws.amazon.com/rds/](https://console.aws.amazon.com/rds/)
 
 While that is starting up I'll show how to run a Postgres database locally.
 
@@ -137,7 +139,7 @@ Note that you'd typically configure the server to accept connections only from w
 
 ## Connecting to Databases
 
-There are a few different ways to form connections using the CLI client (i.e. `psql`).
+There are a few different ways to form connections using the CLI client, `psql`.
 
 First, if the database is running locally you can just use the database name:
 
@@ -145,7 +147,7 @@ First, if the database is running locally you can just use the database name:
 psql postgres_demo
 ```
 
-Second, you can specify connection parameters using various flags:
+Second, you can specify connection parameters using commandline flags:
 
 ```{bash}
 psql -U user -h localhost -p 5432 -d postgres_demo
@@ -177,26 +179,29 @@ Add entries to .pgpass file like this:
 
 ```{text}
 hostname:port:database:username:password
+localhost:5432:*:ellis:hunter1
 ```
 
-You can use `*` to wildcard all or part of a field.
+You can use `*` to wildcard all or part of a field, for example to use the same username and password to connect to different databases on the same server.
 
 ***
 
 Switching back to AWS RDS instance.
 
-# Example 1: DNS
+# Example: DNS Queries
 
 Now that we know how to connect to our RDS instance, the next step is to setup tables for our data.
-
-## Create tables
 
 We're going to create the following tables:
 
 * `blocks` - IP address blocks
-* `locations` - cities
+* `locations` - world cities data
 * `domains` - domain names resolved to IP address
 * `queries` - DNS queries on the client's network
+
+For each DNS query we'll lookup the resolved IP address and then use the IP address to lookup the location.
+
+## Creating tables
 
 Tables are created using the `CREATE TABLE` command.
 
@@ -249,11 +254,11 @@ CREATE TABLE queries (
 );
 ```
 
-## Add data
+## Loading data
 
-You can add data using the `\copy` command.
+Data can inserted in bulk using the `\copy` command. This is much more efficient than `INSERT` when loading large amounts of data.
 
-In this case the files we want to load are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.
+In this case the files the data are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.
 
 ```{sql}
 \copy blocks FROM 'GeoLite2-City-Blocks-IPv4.csv' DELIMITER ',' CSV HEADER;
@@ -261,7 +266,7 @@ In this case the files we want to load are CSV files in a local directory. We ca
 \copy locations FROM 'GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
 ```
 
-## Add indexes
+## Indexing
 
 After we've added our data, we can add indexes to the tables. We load the data before adding indexes because indexes slow write operations and we wanted to load the data as quickly as possible. In the future we'll be performing fewer write operations at once.
 
@@ -271,11 +276,22 @@ The most basic way to create an index is as follows:
 CREATE INDEX blocks_geoname_idx ON blocks (geoname_id);
 ```
 
-This creates a simple b-tree index on the `geoname_id` column in the `blocks` table.
+This creates a simple B-tree index on the `geoname_id` column in the `blocks` table.
 
-Sometimes we vant to use a different index type.
+Sometimes we vant to use a different index type. Postgres provides several index types: B-tree, Hash, GiST, SP-GiST, GIN and BRIN.
 
-For example, because we are working with network addresses we can use a `GIST` index (i.e. Generalized Search Tree):
+| Type | Use case |
+|------|----------|
+| B-tree | Default type, comparison operators (<, <=, =, >=, >) |
+| Hash | Simple equality comparisons, i.e. =, not recommended |
+| GiST | Special types, e.g. two-dimensional geometric data, text data |
+| SP-GiST | Similar to GiST, non-balanced disk-based data structures e.g. quadtrees, k-d trees, and radix trees |
+| GIN | Inverted indexes, multiple values to one row |
+| BRIN | Very large tables in which certain columns have some natural correlation with their physical location within the table |
+
+If you don't know which type to use, start with B-tree and then try others.
+
+Because we are working with network addresses we can use a `GIST` index (i.e. Generalized Search Tree):
 
 ```{sql}
 CREATE INDEX blocks_network_idx ON blocks USING GIST (network inet_ops);
@@ -291,14 +307,67 @@ CREATE UNIQUE INDEX domains_domain_idx ON domains (domain);
 CREATE INDEX domains_address_idx ON domains USING GIST (address);
 
 CREATE UNIQUE INDEX queries_id_idx ON queries (id);
-CREATE INDEX queries_domain_index ON queries (domain);
+CREATE INDEX queries_domain_idx ON queries (domain);
 CREATE INDEX queries_timestamp_idx ON queries (timestamp);
 CREATE INDEX queries_day_timestamp_idx ON queries (DATE_TRUNC('d', timestamp));
 ```
 
-These indexes can drastically improve query performance.
+These indexes drastically improve query performance.
+
+Notice the last index we made includes an expression, `DATE_TRUC('d', timestamp)`, as the target. This is called an _expression_ index, which lets you to index and search the result of a function on the column.
+
+Postgres has support for _partial_ indexes -- indexes that cover only a subset of the table.
+
+```{sql}
+CREATE INDEX queries_domain_partial_indx
+ON queries (domain)
+WHERE status IN (2, 3);
+```
+
+Postgres also supports multi-column indexes.
+
+```{sql}
+CREATE INDEX queries_domain_date_idx
+ON queries (domain, DATE_TRUNC('d', timestamp));
+```
+
+Multi-column indexes will be used implicitly if you specify a `WHERE` clause that only includes the first column of a multi-column index.
 
 ## Querying the data
+
+Queries are easy (until they're not).
+
+```{sql}
+SELECT * FROM queries LIMIT 10;
+```
+
+### Joins
+
+| Type | Description |
+|------|-------------|
+| JOIN | Join |
+| LEFT JOIN | Join |
+| RIGHT JOIN | Join |
+| FULL JOIN | Join |
+| JOIN | Join |
+
+Join tables:
+
+```{sql}
+SELECT *
+FROM blocks
+JOIN locations ON (blocks.geoname_id=locations.geoname_id);
+```
+
+If you want to join tables by the same column name, you can use the `USING` syntax instead of lengthier `ON` syntax:
+
+```{sql}
+SELECT *
+FROM blocks
+JOIN locations USING (geoname_id);
+```
+
+
 
 ```{sql}
 SELECT
@@ -330,7 +399,6 @@ ORDER BY n DESC;
 
 
 ***
-
 
 # Basic Administration
 
