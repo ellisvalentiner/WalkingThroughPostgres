@@ -190,7 +190,64 @@ Switching back to AWS RDS instance.
 
 # Example: DNS Queries
 
-Now that we know how to connect to our RDS instance, the next step is to setup tables for our data.
+## Creating roles
+
+Now that we know how to connect to our RDS instance, we should create new users so we don't have to use the administrator user for every connection.
+
+In Postgres there isn't a distinction between users and groups -- both are called roles. A role is an entity that can own database objects and have database privileges; a role can be considered a "user", a "group", or both depending on how it is used.
+
+Roles can have a range of different permissions and can even "inherit" those permissions from other roles.
+
+| Option | Description |
+|--------|-------------|
+| `SUPERUSER`/`NOSUPERUSER` | Grants the role super user privileges |
+| `CREATEDB`/`NOCREATEDB` | Grants the role the ability to create databases |
+| `CREATEROLE`/`NOCREATEROLE` | Grants the role the ability to create other roles |
+| `INHERIT`/`NOINHERIT` | Roles with `INHERIT` can automatically use whatever database privileges granted to roles it is directly or indirectly a member of. Roles with `NOINHERIT` must use `SET ROLE` |
+| `LOGIN`/`NOLOGIN` | Determines whether the role can log in
+| `REPLICATION`/`NOREPLICATION` | Determines whether the role can connect to the server in replication mode |
+| `BYPASSRLS`/`NOBYPASSRLS` | Determines whether the role bypasses row-level security (RLS) policies |
+| `CONNECTION LIMIT` | Number of concurrent connections the role can make |
+| `PASSWORD` | Set the role's password |
+| `VALID UNTIL 'timestamp'` | Sets a datetime after which the role's password expires |
+| `IN ROLE` | Adds the new role as a member of an existing role |
+| `ROLE` | Adds an existing role(s) as members of the new role |
+| `ADMIN` | Like the `ROLE` option but the named roles are added with the `WITH ADMIN OPTION` |
+
+Here's a role for myself:
+
+```{sql}
+CREATE ROLE ellis WITH LOGIN PASSWORD 'hunter1';
+```
+
+I want this user to have access to the public schema so we can grant those privileges now:
+
+```{sql}
+GRANT ALL PRIVILEGES ON DATABASE public to ellis;
+```
+
+There are several different kinds of privilege: `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `RULE`, `REFERENCES`, `TRIGGER`, `CREATE`, `TEMPORARY`, `EXECUTE`, and `USAGE`.
+
+We should also create a role for our application to use. The application will have a separate user with lesser permissions:
+
+```{sql}
+CREATE ROLE appuser LOGIN PASSWORD 'hunter1' VALID UNTIL '2019-03-07';
+GRANT INSERT ON DATABASE public to appuser;
+```
+
+## Creating schemas
+
+At this point you might want to create a new schema for your data
+
+```{sql}
+CREATE SCHEMA myschema;
+```
+
+but we're not going to do that.
+
+## Creating tables
+
+The next step is to setup tables for our data.
 
 We're going to create the following tables:
 
@@ -201,26 +258,25 @@ We're going to create the following tables:
 
 For each DNS query we'll lookup the resolved IP address and then use the IP address to lookup the location.
 
-## Creating tables
+The application will populate the `domains` and `queries` tables. We will need to supply the data for `blocks` and `locations`. That data comes from MaxMind's GeoIP2 databases, available under the Creative Commons Attribution-ShareAlike 4.0 International License.
 
-Tables are created using the `CREATE TABLE` command.
+[https://dev.maxmind.com/geoip/geoip2/geolite2/](https://dev.maxmind.com/geoip/geoip2/geolite2/)
+
+We can download that data here:
+
+```{bash}
+wget -qO- https://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip | tar -xvz
+head GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv4.csv
+head GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv
+```
+
+Tables are created using the `CREATE TABLE` command, providing the table name and then the column names and types.
+
+Let's first create a table for the locations:
 
 ```{sql}
-CREATE TABLE blocks (
-  network                        CIDR,
-  geoname_id                     INTEGER,
-  registered_country_geoname_id  INTEGER,
-  represented_country_geoname_id INTEGER,
-  is_anonymous_proxy             BOOLEAN,
-  is_satellite_provider          BOOLEAN,
-  postal_code                    TEXT,
-  latitude                       NUMERIC,
-  longitude                      NUMERIC,
-  accuracy_radius                INTEGER
-);
-
 CREATE TABLE locations (
-  geoname_id             INTEGER,
+  geoname_id             INTEGER PRIMARY KEY,
   locale_code            VARCHAR(2),
   continent_code         VARCHAR(2),
   continent_name         VARCHAR(13),
@@ -235,14 +291,43 @@ CREATE TABLE locations (
   time_zone              VARCHAR(30),
   is_in_european_union   BOOLEAN
 );
+```
 
+Next we'll make a table for the network blocks:
+
+```{sql}
+CREATE TABLE blocks (
+  network                        CIDR UNIQUE NOT NULL,
+  geoname_id                     INTEGER REFERENCES locations (geoname_id),
+  registered_country_geoname_id  INTEGER,
+  represented_country_geoname_id INTEGER,
+  is_anonymous_proxy             BOOLEAN,
+  is_satellite_provider          BOOLEAN,
+  postal_code                    TEXT,
+  latitude                       NUMERIC,
+  longitude                      NUMERIC,
+  accuracy_radius                INTEGER
+);
+```
+
+Postgres natively supports Classless Inter-Domain Routing (CIDR) as a type! It is better to use these types instead of plain text types to store network addresses, because these types offer input error checking and specialized operators and functions.
+
+CIDR is for *networks* while INET is for hosts, however this is a minor difference.
+
+We'll use INET in the table for domains:
+
+```{sql}
 CREATE TABLE domains (
   domain  TEXT,
   address INET,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+```
 
+Finally we'll create the table to hold queries:
+
+```{sql}
 CREATE TABLE queries (
   id        INTEGER,
   timestamp TIMESTAMP,
@@ -254,6 +339,8 @@ CREATE TABLE queries (
 );
 ```
 
+Now that we've got our tables it's time to start adding data!
+
 ## Loading data
 
 Data can inserted in bulk using the `\copy` command. This is much more efficient than `INSERT` when loading large amounts of data.
@@ -261,14 +348,16 @@ Data can inserted in bulk using the `\copy` command. This is much more efficient
 In this case the files the data are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.
 
 ```{sql}
-\copy blocks FROM 'GeoLite2-City-Blocks-IPv4.csv' DELIMITER ',' CSV HEADER;
-\copy blocks FROM 'GeoLite2-City-Blocks-IPv6.csv' DELIMITER ',' CSV HEADER;
-\copy locations FROM 'GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
+\copy blocks FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv4.csv' DELIMITER ',' CSV HEADER;
+\copy blocks FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv6.csv' DELIMITER ',' CSV HEADER;
+\copy locations FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
 ```
 
 ## Indexing
 
-After we've added our data, we can add indexes to the tables. We load the data before adding indexes because indexes slow write operations and we wanted to load the data as quickly as possible. In the future we'll be performing fewer write operations at once.
+After we've added our data, we can add indexes to the tables. Indexes allow the database server to find and retrieve specific rows much faster than it could do without an index. However indexes add overhead.
+
+We load the data before adding indexes because indexes slow write operations and we wanted to load the data as quickly as possible. In the future we'll be performing fewer write operations at once.
 
 The most basic way to create an index is as follows:
 
@@ -312,7 +401,7 @@ CREATE INDEX queries_timestamp_idx ON queries (timestamp);
 CREATE INDEX queries_day_timestamp_idx ON queries (DATE_TRUNC('d', timestamp));
 ```
 
-These indexes drastically improve query performance.
+These indexes can drastically improve query performance.
 
 Notice the last index we made includes an expression, `DATE_TRUC('d', timestamp)`, as the target. This is called an _expression_ index, which lets you to index and search the result of a function on the column.
 
@@ -332,6 +421,10 @@ ON queries (domain, DATE_TRUNC('d', timestamp));
 ```
 
 Multi-column indexes will be used implicitly if you specify a `WHERE` clause that only includes the first column of a multi-column index.
+
+## DNS Queries
+
+
 
 ## Querying the data
 
@@ -367,7 +460,7 @@ FROM blocks
 JOIN locations USING (geoname_id);
 ```
 
-
+###
 
 ```{sql}
 SELECT
@@ -382,40 +475,18 @@ SELECT
   country_name AS country,
   continent_name AS continent
 FROM (
-       SELECT
-         domain,
-         COUNT(id) AS n
-       FROM queries
-       WHERE
-         status IN (2, 3)
-       GROUP BY domain
-       ORDER BY n DESC
-     ) domain_counts
-     JOIN domains USING (domain)
-     JOIN blocks ON (domains.address << blocks.network)
-     JOIN locations USING (geoname_id)
+  SELECT
+    domain,
+    COUNT(id) AS n
+  FROM queries
+  WHERE
+    status IN (2, 3)
+  GROUP BY domain
+  ORDER BY n DESC
+  LIMIT 500
+) domain_counts
+JOIN domains USING (domain)
+JOIN blocks ON (domains.address << blocks.network)
+JOIN locations USING (geoname_id)
 ORDER BY n DESC;
-```
-
-
-***
-
-# Basic Administration
-
-### Creating Roles
-
-Roles are "users" and "groups".
-
-```{sql}
-CREATE ROLE dbadmin NOLOGIN NOINHERIT SUPERUSER;
-CREATE ROLE bob;
-GRANT dbadmin TO bob;
-```
-
-```{sql}
-CREATE ROLE datascientist;
-ALTER DEFAULT PERMISSIONS IN SCHEMA public GRANT SELECT ON TABLES TO datascientist;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO datascientist;
-CREATE ROLE julia LOGIN PASSWORD 'hunter1';
-GRANT datascientist TO julia;
 ```

@@ -8,21 +8,34 @@ output:
     lib_dir: libs
     nature:
       beforeInit: ["https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.5/highlight.min.js",  "https://mattboldt.com/demos/typed-js/js/typed.custom.js", "js/custom.js"]
-      highlightStyle: atom-one-dark
+      highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
       ratio: '16:9'
 editor_options: 
   chunk_output_type: console
 ---
-class: center, middle, shadow
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #ffffffD9, #ffffff73), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
+background-image: linear-gradient(to right, #ffffff99, #ffffff99), url("https://cdn.audubon.org/cdn/farfuture/Cx-Qe9BnTJRa_ecjojFoTA6IOM69XWH10l_9xtAj0Hc/mtime:1427798726/sites/default/files/gettyimages_142457895.jpg")
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE, crayon.enabled = TRUE)
 ```
+
+# Agenda
+
+- ### What is Postgres and why should use it?
+
+- ### How to get it
+
+- ### Examples
+
+---
+class: center, middle, shadow
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #ffffffD9, #ffffff73), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
 
 > ## _"PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance."_
 
@@ -48,8 +61,9 @@ background-image: linear-gradient(to bottom, #0000008c, #000000d9), url("https:/
 db-engines.com
 ]
 
+
 ---
-class: left, bottom, shadow
+class: left, bottom
 background-position: top
 background-size: contain
 background-image: url("images/stack-overflow.png")
@@ -58,15 +72,11 @@ background-image: url("images/stack-overflow.png")
 2018 Stack Overflow Developer Survey
 ]
 
-???
-
-DB-Engines is an initiative to collect and present information on database management systems (DBMS).
-
 ---
 
 License
 
-```{plaintext, eval=FALSE}
+```{text, eval=FALSE}
 PostgreSQL is released under the PostgreSQL License, a liberal Open Source
 license, similar to the BSD or MIT licenses.
 
@@ -112,20 +122,69 @@ background-image: linear-gradient(#000000c3, #000000c3), url("images/oracle.png"
 
 License for another "popular" database
 
+License doesn't even fit on the page, you need a lawyer just to read the license
+
 Notice all of the restrictions
 
 Other big companies to this too
 
 ---
+class: inverse
+background-size: cover
+background-position: center
+background-image: linear-gradient(#000000c3, #000000c3), url("https://images.unsplash.com/photo-1438866612080-aba418f9046c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2869&q=80")
+
+# Postgres is
+
+
+--
+
+- ### an object relational database management system
+
+--
+
+- ### open source
+
+--
+
+- ### conforms to at least 160 out of 179 the SQL:2011 features
+
+--
+
+- ### also supports NoSQL
+
+--
+
+- ### extendable
+
+--
+
+- ### free as in freedom
+
+--
+
+- ### free as in price
+
+???
+
+SQL:2011 (or ISO/IEC 9075:2011) is the seventh revision of the ISO (1987) and ANSI (1986) standard
+
+SQL:2016 is the latest, which added more optional features, but I couldn't find data available for that
+
+PostgreSQL tries to conform with the SQL standard where such conformance does not contradict traditional features or could lead to poor architectural decisions.
+
+"no relational database meets full conformance with this standard" -- postgres.com
+
+---
 class: center, middle, inverse
 background-size: cover
 background-position: center
---background-image: linear-gradient(#000000c3, #000000c3)
+background-image: linear-gradient(#4497f5c3, #75ddffc3), url("https://www.sciencemag.org/sites/default/files/styles/inline__699w__no_aspect/public/images/7513277910_0637bdd3ef_o.jpg")
 
-> ## _"So how do I get my hands on Postgres?"_
+> # _"So how do I get my hands on Postgres?"_
 
 .right[
-— You (right now)
+### — You (right now)
 ]
 
 ---
@@ -151,9 +210,31 @@ Binaries available:
 ---
 class: center, middle
 
+.left[
+## Hosted solutions provided by
+]
+
 <image src="images/ms_aws_google_logos.jpg" height="250px"/>
 
 <image src="images/DigitalOcean.svg.png" width="200px"/> <image src="images/heroku-logo-solid-purple.svg" width="200"/>
+
+---
+class: center, middle, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #000000c3, #000000c3)
+
+# SQL Primer
+
+---
+class: top, left, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #000000c3, #000000c3)
+
+# .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
+
+
 
 ---
 class: top, left, inverse
@@ -206,7 +287,19 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 
 --
 
-### Finally, our client wants us to query the database for all DNS queries to hosts outside of North America.
+### Finally, our client wants to query the database for all DNS queries to hosts outside of North America.
+
+---
+class: center, middle
+background-position: center
+background-size: cover
+background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+
+```{tikz, fig.ext='svg'}
+\begin{tikzpicture}
+ \draw (0,0) circle (2cm);
+\end{tikzpicture}
+```
 
 ---
 class: top, left, inverse
@@ -265,14 +358,26 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 
 # Stock Market Data
 
-### Daily S&P 500 prices for 1998 through July 31st, 2013.
+### Daily prices for companies in the S&P 500
+
+### 1998 through July 31st, 2013
 
 ---
 class: center, middle, inverse
 background-position: center
-background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), linear-gradient(to top, #000000aa, #000000aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
 # Demo
+
+---
+background-position: center
+background-image: linear-gradient(to right, #00706caa, #00ffbbaa)
+
+# Recap
+
+## Postgres is a free, open-source, relational database management system
+
+
 
 ---
 
@@ -280,9 +385,7 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 
 https://www.citusdata.com/
 
----
-
-# Closing
+http://postgresguide.com/
 
 ---
 class: center, middle, inverse
