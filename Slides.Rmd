@@ -456,7 +456,7 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
-# Get in touch
+# Get in touch!
 
 .top[
 .pull-left[
@@ -469,7 +469,7 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 ###<i class="fab fa-google" aria-hidden="true"></i> gmail
 ]
 .pull-right[
-### Sr. Data Scientist @ Powerley
+## <br>
 
 ### <i class="fab fa-python"></i> python <i class="fab fa-r-project"></i> R
 
