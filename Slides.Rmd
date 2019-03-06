@@ -313,11 +313,15 @@ background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(
 
 --
 
-### The client has focused on incoming traffic, but what about outgoing traffic?
+### Client has focused on incoming traffic but what about outgoing traffic?
 
 --
 
-### Our client wants us to design a database to store outgoing DNS queries.
+### Our client wants us to design a database to store outgoing DNS requests and query the data for interesting summaries
+
+???
+
+computer -> router -> modem -> servers
 
 ---
 class: top, left, inverse
@@ -438,11 +442,13 @@ background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient
 
 # Resources
 
-### Citus Data - [citusdata.com](citusdata.com)
+### Citus Data - [citusdata.com](https://www.citusdata.com)
 
-### Craig Kerstien's blog - [craigkerstiens.com](craigkerstiens.com)
+### Craig Kerstien's blog - [craigkerstiens.com](https://www.craigkerstiens.com)
 
-### Postgres Guide - [postgresguide.com](postgresguide.com)
+### Postgres Guide - [postgresguide.com](https://www.postgresguide.com)
+
+### Scaling Postgres - [scalingpostgres.com](https://www.scalingpostgres.com)
 
 ---
 class: center, inverse
@@ -472,13 +478,3 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 ### <i class="fas fa-database"></i> databases
 ]
 ]
-
----
-class: center, middle, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
-
-<div style="font-size: 160px; font-family: Lato">
-Questions?
-</div>
