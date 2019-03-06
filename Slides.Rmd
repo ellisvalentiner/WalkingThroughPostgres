@@ -4,7 +4,7 @@ author: "Ellis Valentiner"
 date: "Wed Mar. 6th, 2019"
 output:
   xaringan::moon_reader:
-    css: ["default", "css/custom.css", "css/terminal.css"]
+    css: ["default", "css/custom.css", "css/terminal.css", "https://use.fontawesome.com/releases/v5.0.12/css/all.css"]
     lib_dir: libs
     nature:
       beforeInit: ["https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.5/highlight.min.js",  "https://mattboldt.com/demos/typed-js/js/typed.custom.js", "js/custom.js"]
@@ -12,24 +12,25 @@ output:
       highlightLines: true
       countIncrementalSlides: false
       ratio: '16:9'
+    seal: false
 editor_options: 
   chunk_output_type: console
 ---
+class: center, middle, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #ffffff99, #ffffff99), url("https://cdn.audubon.org/cdn/farfuture/Cx-Qe9BnTJRa_ecjojFoTA6IOM69XWH10l_9xtAj0Hc/mtime:1427798726/sites/default/files/gettyimages_142457895.jpg")
+background-image: linear-gradient(to top, #434343ee, #000000cc), url("https://cdn1.medicalnewstoday.com/content/images/articles/322/322736/elephant-from-the-front.jpg")
+count: false
 
-```{r setup, include=FALSE}
-options(htmltools.dir.version = FALSE, crayon.enabled = TRUE)
-```
+<div style="font-size: 130px; font-family: 'Lato'; font-variant: small-caps;">
+Walking Through Postgres
+</div>
 
-# Agenda
-
-- ### What is Postgres and why should use it?
-
-- ### How to get it
-
-- ### Examples
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; font-family: 'Lato'; opacity: 0.75;">
+<h4>Wed Mar. 6th, 2019</h4>
+<h4>Ellis Valentiner</h4>
+(CC BY-SA 4.0) <i class="fab fa-creative-commons"></i> <i class="fab fa-creative-commons-by"></i> <i class="fab fa-creative-commons-sa"></i>
+</div>
 
 ---
 class: center, middle, shadow
@@ -37,44 +38,103 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to right, #ffffffD9, #ffffff73), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
 
-> ## _"PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance."_
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE, crayon.enabled = TRUE)
+```
 
-.right[
-www.postgresql.org
-]
+> # _"PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance."_
+
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: postgresql.org
+</div>
 
 ???
 
-ACID compliant (Atomicity, Consistency, Isolation, Durability)
+Postgres: what, why, how
+
+History:
+In 1973 Michael Stonebraker (and others; UMich)at UC Berkley began work on Ingres (Interactive Graphics and Retrieval System)
+
+Work on Postgres began in 1986, released in late 1989 using its own query language (PostQUEL), switched to SQL in 1995 (named in Postgres95). In 1996 it was renamed to PostgreSQL (v6.0) -- but most people just call it postgres
+
+---
+background-position: center
+background-size: cover
+background-image: linear-gradient(to left, #ffffffbb, #ffffffdd), url("https://cdn.audubon.org/cdn/farfuture/Cx-Qe9BnTJRa_ecjojFoTA6IOM69XWH10l_9xtAj0Hc/mtime:1427798726/sites/default/files/gettyimages_142457895.jpg")
+
+# Object-relational database systems
+
+.middle[
+.center[
+![](https://upload.wikimedia.org/wikipedia/commons/7/7c/Object-Oriented_Model.svg)
+]
+]
+
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: wikimedia.org
+</div>
 
 ---
 class: middle, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to bottom, #0000008c, #000000d9), url("https://kids.nationalgeographic.com/content/dam/kids/photos/animals/Mammals/A-G/african-elephant-eating.adapt.945.1.jpg")
+background-image: linear-gradient(to bottom, #000000aa, #000000dd), url("https://kids.nationalgeographic.com/content/dam/kids/photos/animals/Mammals/A-G/african-elephant-eating.adapt.945.1.jpg")
 
-> ## _"PostgreSQL is the database management system that gained more popularity in our DB-Engines Ranking within the last year than any of the other 343 monitored systems._
+> # _"PostgreSQL is the database management system that gained more popularity in our DB-Engines Ranking within the last year than any of the other 343 monitored systems._
 
-> ## .accent-pink[_We thus declare PostgreSQL as the DBMS of the Year 2018.]"_
+> # .accent-pink[_We thus declare PostgreSQL as the DBMS of the Year 2018.]"_
 
-.right[
-db-engines.com
-]
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: db-engines.com
+</div>
 
+???
+
+DB-Engines is an initiative to collect and present information on database management systems (DBMS
 
 ---
 class: left, bottom
 background-position: top
 background-size: contain
-background-image: url("images/stack-overflow.png")
+background-image: url("images/stack-overflow-loved.png")
 
-.small[
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; background-color: #ffffff;">
+source: stackoverflow.com
+</div>
+
+???
+
 2018 Stack Overflow Developer Survey
-]
 
 ---
+class: left, bottom
+background-position: top
+background-size: contain
+background-image: url("images/stack-overflow-dreaded.png")
 
-License
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; background-color: #ffffff;">
+source: stackoverflow.com
+</div>
+
+???
+
+2018 Stack Overflow Developer Survey
+
+---
+class: left, bottom
+background-position: top
+background-size: contain
+background-image: url("images/stack-overflow-wanted.png")
+
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; background-color: #ffffff;">
+source: stackoverflow.com
+</div>
+
+???
+
+2018 Stack Overflow Developer Survey
+
+---
 
 ```{text, eval=FALSE}
 PostgreSQL is released under the PostgreSQL License, a liberal Open Source
@@ -104,6 +164,10 @@ THE UNIVERSITY OF CALIFORNIA HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
 UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 ```
 
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: postgresql.org
+</div>
+
 ---
 class: center, middle
 background-size: cover
@@ -116,13 +180,17 @@ background-size: cover
 background-position: center
 background-image: linear-gradient(#000000c3, #000000c3), url("images/oracle.png")
 
-### .accent-pink[You may not disclose results of any Program benchmark tests without Oracle’s prior consent.]
+## .accent-pink[You may not disclose results of any Program benchmark tests without Oracle’s prior consent.]
+
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: oracle.com
+</div>
 
 ???
 
-License for another "popular" database
+License for another popular database
 
-License doesn't even fit on the page, you need a lawyer just to read the license
+Doesn't even fit on the page, you need a lawyer just to read the license
 
 Notice all of the restrictions
 
@@ -134,8 +202,7 @@ background-size: cover
 background-position: center
 background-image: linear-gradient(#000000c3, #000000c3), url("https://images.unsplash.com/photo-1438866612080-aba418f9046c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2869&q=80")
 
-# Postgres is
-
+# .turquoise[Postgres is …]
 
 --
 
@@ -143,19 +210,15 @@ background-image: linear-gradient(#000000c3, #000000c3), url("https://images.uns
 
 --
 
+- ### ACID compliant
+
+--
+
+- ### SQL standard compliant
+
+--
+
 - ### open source
-
---
-
-- ### conforms to at least 160 out of 179 the SQL:2011 features
-
---
-
-- ### also supports NoSQL
-
---
-
-- ### extendable
 
 --
 
@@ -167,9 +230,19 @@ background-image: linear-gradient(#000000c3, #000000c3), url("https://images.uns
 
 ???
 
+Atomicity - each transaction is treated as a single "unit"
+
+Consistency - transactions can only bring the database from one valid state to another
+
+Isolation - concurrent execution of transactions leaves the database in the same state that would have been obtained if the transactions were executed sequentially
+
+Durability - once a transaction has been committed, it will remain committed even in the case of a system failure
+
 SQL:2011 (or ISO/IEC 9075:2011) is the seventh revision of the ISO (1987) and ANSI (1986) standard
 
 SQL:2016 is the latest, which added more optional features, but I couldn't find data available for that
+
+https://en.wikipedia.org/wiki/SQL_compliance
 
 PostgreSQL tries to conform with the SQL standard where such conformance does not contradict traditional features or could lead to poor architectural decisions.
 
@@ -222,19 +295,11 @@ class: center, middle
 class: center, middle, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #000000c3, #000000c3)
+background-image: linear-gradient(to right, #000000c3, #000000c3), url('https://www.klaustiedge.com/wp-content/uploads/W60_Color_Elephant-Herd%C2%A9-AfricanFineArt.co_.za_.jpg')
 
-# SQL Primer
-
----
-class: top, left, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to right, #000000c3, #000000c3)
-
-# .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
-
-
+<div style="font-size: 120px; font-family: Lato; color: #E91E63">
+SQL in 60 seconds
+</div>
 
 ---
 class: top, left, inverse
@@ -243,8 +308,6 @@ background-size: cover
 background-image: linear-gradient(to right, #000000c3, #000000c3), url('https://www.klaustiedge.com/wp-content/uploads/W60_Color_Elephant-Herd%C2%A9-AfricanFineArt.co_.za_.jpg')
 
 # .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
-
-<!-- <img src="images/SELECT.gif" height="400"/> -->
 
 <div class="text-editor-wrap">
 	<div class="title-bar" style="color:#000000;">
@@ -269,9 +332,12 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
-# Example: DNS Data
+<div style="font-size: 80px; font-family: Lato">
+Example: DNS Data
+</div>
 
 ---
+name: dns-demo
 class: top, left, inverse
 background-position: center
 background-size: cover
@@ -279,7 +345,7 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 
 # Background
 
-### We have a client who monitors DNS queries on their network to block malicious traffic.
+### We have a client who monitors DNS queries on their network to block malicious traffic, identify interesting patterns, etc.
 
 --
 
@@ -290,16 +356,28 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 ### Finally, our client wants to query the database for all DNS queries to hosts outside of North America.
 
 ---
-class: center, middle
+class: top, left, inverse
 background-position: center
 background-size: cover
 background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
-```{tikz, fig.ext='svg'}
-\begin{tikzpicture}
- \draw (0,0) circle (2cm);
-\end{tikzpicture}
-```
+# Background
+
+### The client will provide data:
+
+- ### Queries (timestamp, status, domain name, client IP)
+
+- ### Domains (domain name, host IP)
+
+- ### Geographic information (IP blocks, city name, lat/lon)
+
+???
+
+Queries contain timestamp, client, domain name
+
+Domain names will be mapped to IP addresses if not already known
+
+Geographic information will be used to map IP addresses to world locations
 
 ---
 class: top, left, inverse
@@ -310,7 +388,7 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 # Our Tasks
 
 --
-### 1. Create a new Postgres database
+### 1. Configure a new Postgres database
 
 --
 
@@ -336,11 +414,111 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
-# Demo
+<div style="font-size: 120px; font-family: Lato">
+Demo
+</div>
 
 ---
 class: center, middle, inverse
 background-position: center
+background-size: cover
+background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient(220deg, #000000a0, #000000a0), url("https://images.ctfassets.net/22n7d68fswlw/2lUV1X3JY8SM24oe4mG6GI/7312b2a9a87c723cb4c91403eb1877f6/elephantqueen_0HERO")
+
+<div style="font-size: 120px; font-family: Lato">
+Recap
+</div>
+
+---
+class: inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient(220deg, #000000a0, #000000a0), url("https://images.ctfassets.net/22n7d68fswlw/2lUV1X3JY8SM24oe4mG6GI/7312b2a9a87c723cb4c91403eb1877f6/elephantqueen_0HERO")
+
+# Postgres is
+
+- ### an object relational database management system
+
+- ### ACID compliant
+
+- ### SQL standard compliant
+
+- ### open source
+
+- ### free as in freedom
+
+- ### free as in price
+
+---
+class: inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient(220deg, #000000a0, #000000a0), url("https://images.ctfassets.net/22n7d68fswlw/2lUV1X3JY8SM24oe4mG6GI/7312b2a9a87c723cb4c91403eb1877f6/elephantqueen_0HERO")
+
+# Postgres is
+
+- ### an object relational database management system
+
+- ### ACID-compliant (Atomicity, Consistency, Isolation, Durability)
+
+- ### conforms to 160 of 179 the SQL:2011 features
+
+- ### open source, free as in freedom, and free as in price
+
+---
+class: inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient(220deg, #000000a0, #000000a0), url("https://images.ctfassets.net/22n7d68fswlw/2lUV1X3JY8SM24oe4mG6GI/7312b2a9a87c723cb4c91403eb1877f6/elephantqueen_0HERO")
+
+# Resources
+
+### Citus Data - citusdata.com
+
+### Postgres Guide - postgresguide.com
+
+---
+class: center, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
+
+# About me
+
+.top[
+.pull-left[
+## @ellisvalentiner
+
+### <i class="fab fa-github"></i> github
+
+### <i class="fab fa-twitter" aria-hidden="true"></i> twitter
+
+###<i class="fab fa-google" aria-hidden="true"></i> gmail
+]
+.pull-right[
+### Sr. Data Scientist @ Powerley
+
+### <i class="fab fa-python"></i> python <i class="fab fa-r-project"></i> R
+
+### <i class="fab fa-aws"></i> aws <i class="fab fa-docker"></i> docker
+
+### <i class="fas fa-database"></i> databases
+]
+]
+
+---
+class: center, middle, inverse
+background-position: center
+background-size: cover
+background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
+
+<div style="font-size: 160px; font-family: Lato">
+Questions?
+</div>
+
+---
+class: center, middle, inverse
+background-position: center
+background-size: cover
 background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
 # Example: Stock Market Data
@@ -354,6 +532,7 @@ Arrays, Enum, JSON(B), GIN
 ---
 class: top, left, inverse
 background-position: center
+background-size: cover
 background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
 # Stock Market Data
@@ -365,34 +544,7 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 ---
 class: center, middle, inverse
 background-position: center
+background-size: cover
 background-image: linear-gradient(to top, #666491aa, #1B2964aa), linear-gradient(to top, #000000aa, #000000aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
 # Demo
-
----
-background-position: center
-background-image: linear-gradient(to right, #00706caa, #00ffbbaa)
-
-# Recap
-
-## Postgres is a free, open-source, relational database management system
-
-
-
----
-
-# Resources
-
-https://www.citusdata.com/
-
-http://postgresguide.com/
-
----
-class: center, middle, inverse
-
-# Thanks!
-
----
-class: center, middle, inverse
-
-# Questions?
