@@ -223,7 +223,7 @@ CREATE ROLE ellis WITH LOGIN PASSWORD 'hunter1';
 I want this user to have access to the public schema so we can grant those privileges now:
 
 ```{sql}
-GRANT ALL PRIVILEGES ON DATABASE public to ellis;
+GRANT ALL PRIVILEGES ON DATABASE aacsdemo to ellis;
 ```
 
 There are several different kinds of privilege: `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `RULE`, `REFERENCES`, `TRIGGER`, `CREATE`, `TEMPORARY`, `EXECUTE`, and `USAGE`.
@@ -232,7 +232,7 @@ We should also create a role for our application to use. The application will ha
 
 ```{sql}
 CREATE ROLE appuser LOGIN PASSWORD 'hunter1' VALID UNTIL '2019-03-07';
-GRANT INSERT ON DATABASE public to appuser;
+GRANT INSERT ON DATABASE aacsdemo to appuser;
 ```
 
 ## Creating schemas
@@ -243,7 +243,7 @@ At this point you might want to create a new schema for your data
 CREATE SCHEMA myschema;
 ```
 
-but we're not going to do that.
+but we're not going to do that today.
 
 ## Creating tables
 
@@ -318,7 +318,7 @@ We'll use INET in the table for domains:
 
 ```{sql}
 CREATE TABLE domains (
-  domain  TEXT,
+  domain  TEXT PRIMARY KEY,
   address INET,
   created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -329,7 +329,7 @@ Finally we'll create the table to hold queries:
 
 ```{sql}
 CREATE TABLE queries (
-  id        INTEGER,
+  id        INTEGER PRIMARY KEY,
   timestamp TIMESTAMP,
   type      INTEGER,
   status    INTEGER,
@@ -348,10 +348,14 @@ Data can inserted in bulk using the `\copy` command. This is much more efficient
 In this case the files the data are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.
 
 ```{sql}
+\copy locations FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
 \copy blocks FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv4.csv' DELIMITER ',' CSV HEADER;
 \copy blocks FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv6.csv' DELIMITER ',' CSV HEADER;
-\copy locations FROM 'GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv' DELIMITER ',' CSV HEADER;
 ```
+
+We *must* import the locations first because the blocks depend on it.
+
+This could take up to 3 minutes...
 
 ## Indexing
 
@@ -383,22 +387,22 @@ If you don't know which type to use, start with B-tree and then try others.
 Because we are working with network addresses we can use a `GIST` index (i.e. Generalized Search Tree):
 
 ```{sql}
-CREATE INDEX blocks_network_idx ON blocks USING GIST (network inet_ops);
+CREATE INDEX CONCURRENTLY blocks_network_idx ON blocks USING GIST (network inet_ops);
 ```
 
 We can make similar indexes on other tables:
 
 ```{sql}
-CREATE UNIQUE INDEX locations_geoname_idx ON locations (geoname_id);
-CREATE INDEX locations_country_name_idx ON locations (country_name);
+CREATE UNIQUE INDEX CONCURRENTLY locations_geoname_idx ON locations (geoname_id);
+CREATE INDEX CONCURRENTLY locations_country_name_idx ON locations (country_name);
 
-CREATE UNIQUE INDEX domains_domain_idx ON domains (domain);
-CREATE INDEX domains_address_idx ON domains USING GIST (address);
+CREATE UNIQUE INDEX CONCURRENTLY domains_domain_idx ON domains (domain);
+CREATE INDEX CONCURRENTLY domains_address_idx ON domains USING GIST (address inet_ops);
 
-CREATE UNIQUE INDEX queries_id_idx ON queries (id);
-CREATE INDEX queries_domain_idx ON queries (domain);
-CREATE INDEX queries_timestamp_idx ON queries (timestamp);
-CREATE INDEX queries_day_timestamp_idx ON queries (DATE_TRUNC('d', timestamp));
+CREATE UNIQUE INDEX CONCURRENTLY queries_id_idx ON queries (id);
+CREATE INDEX CONCURRENTLY queries_domain_idx ON queries (domain);
+CREATE INDEX CONCURRENTLY queries_timestamp_idx ON queries (timestamp);
+CREATE INDEX CONCURRENTLY queries_day_timestamp_idx ON queries (DATE_TRUNC('d', timestamp));
 ```
 
 These indexes can drastically improve query performance.
@@ -422,47 +426,258 @@ ON queries (domain, DATE_TRUNC('d', timestamp));
 
 Multi-column indexes will be used implicitly if you specify a `WHERE` clause that only includes the first column of a multi-column index.
 
-## DNS Queries
-
-
+We now have all of our tables setup, we're done!
 
 ## Querying the data
 
-Queries are easy (until they're not).
+Queries consist of `SELECT` followed by a list of columns or `*`, meaning every column, that come `FROM` a table (or subquery). It is a good idea to limit the number of items returned.
 
 ```{sql}
 SELECT * FROM queries LIMIT 10;
+```
+
+In Postgres we can efficiently sample the table using `TABLESAMPLE SYSTEM (numeric)`, where the numeric is value between 0 and 100 (inclusive). This is not purely random(!) but it is close enough for what we are doing here. For better randomness see `TABLESAMPLE BERNOULLI`.
+
+```{sql}
+SELECT * FROM queries TABLESAMPLE SYSTEM (1) LIMIT 10;
+```
+
+We can also filter the data using the `WHERE` clause.
+
+Let's find Ann Arbor:
+
+```{sql}
+SELECT * FROM locations WHERE city_name = 'Ann Arbor';
+```
+
+It is `geoname_id` 4984247.
+
+### Group By and Aggregates
+
+We can calculate simple aggregates:
+
+```{sql}
+SELECT COUNT(*) FROM locations;
+```
+
+```{sql}
+SELECT COUNT(DISTINCT domain) FROM queries;
+```
+
+We can calculate aggregates by groups:
+
+```{sql}
+SELECT client, COUNT(*) FROM queries GROUP BY client;
+```
+
+We can use a sub-query and a window function to get the most recent domain for each client:
+
+```{sql}
+SELECT client, timestamp, domain
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY client ORDER BY "timestamp" DESC) AS rn
+  FROM queries TABLESAMPLE SYSTEM (1)
+) AS tbl
+WHERE rn = 1;
+```
+
+### Datetime Functions
+
+Postgres has great support for date/times.
+
+Let's get the current timestamp:
+
+```{sql}
+SELECT current_timestamp;
+```
+
+and in our local timezone:
+
+```{sql}
+SELECT now() AT TIME ZONE 'America/Detroit';
+```
+
+Let's get recent queries:
+
+```{sql}
+SELECT *
+FROM queries
+WHERE timestamp >= (current_timestamp - '10 minutes'::INTERVAL);
+```
+
+We can also create roll-ups:
+
+```{sql}
+SELECT DATE_TRUNC('m', timestamp) AS minute, COUNT(*)
+FROM queries TABLESAMPLE SYSTEM (1)
+GROUP BY minute;
+```
+
+```{sql}
+SELECT DATE_TRUNC('hour', timestamp) AS hour, COUNT(*)
+FROM queries TABLESAMPLE SYSTEM (1)
+GROUP BY hour;
 ```
 
 ### Joins
 
 | Type | Description |
 |------|-------------|
-| JOIN | Join |
-| LEFT JOIN | Join |
-| RIGHT JOIN | Join |
-| FULL JOIN | Join |
-| JOIN | Join |
+| (INNER) JOIN | For each row R1 of T1, the joined table has a row for each row in T2 that satisfies the join condition with R1. |
+| LEFT (OUTER) JOIN | First, an inner join is performed. Then, for each row in T1 that does not satisfy the join condition with any row in T2, a joined row is added with null values in columns of T2. Thus, the joined table always has at least one row for each row in T1. |
+| RIGHT (OUTER) JOIN | First, an inner join is performed. Then, for each row in T2 that does not satisfy the join condition with any row in T1, a joined row is added with null values in columns of T1. This is the converse of a left join: the result table will always have a row for each row in T2. |
+| FULL (OUTER) JOIN | First, an inner join is performed. Then, for each row in T1 that does not satisfy the join condition with any row in T2, a joined row is added with null values in columns of T2. Also, for each row of T2 that does not satisfy the join condition with any row in T1, a joined row with null values in the columns of T1 is added. |
+| CROSS JOIN | Every possible combination of rows from T1 and T2 (i.e., a Cartesian product) |
 
-Join tables:
+Here we can join a sample from the `blocks` table to the `locations` table and return a subset of their columns:
 
 ```{sql}
-SELECT *
+SELECT
+  blocks.network,
+  blocks.latitude,
+  blocks.longitude,
+  locations.country_name,
+  locations.city_name
 FROM blocks
-JOIN locations ON (blocks.geoname_id=locations.geoname_id);
+TABLESAMPLE SYSTEM (1)
+JOIN locations ON (blocks.geoname_id=locations.geoname_id)
+LIMIT 25;
 ```
 
 If you want to join tables by the same column name, you can use the `USING` syntax instead of lengthier `ON` syntax:
 
 ```{sql}
-SELECT *
-FROM blocks
-JOIN locations USING (geoname_id);
+SELECT network, latitude, longitude, country_name, city_name
+FROM blocks TABLESAMPLE SYSTEM (1)
+JOIN locations USING (geoname_id)
+LIMIT 25;
 ```
 
-###
+There is also a `NATURAL` join that forms a `USING` list consisting of all column names that appear in both input tables.
 
 ```{sql}
+SELECT network, latitude, longitude, country_name, city_name
+FROM blocks TABLESAMPLE SYSTEM (1)
+NATURAL JOIN locations
+LIMIT 25;
+```
+
+### More Functions
+
+In addition to basic aggregate functions there are many processing functions.
+
+We can do things like split strings:
+
+```{sql}
+SELECT string_to_array(domain, '.') AS parts
+FROM domains TABLESAMPLE SYSTEM (1)
+LIMIT 50;
+```
+
+Let's just find the last part of each domain:
+
+```{sql}
+SELECT (parts)[array_length(parts,1)] AS top_level
+FROM (
+  SELECT string_to_array(domain, '.') AS parts
+  FROM domains TABLESAMPLE SYSTEM (1)
+  LIMIT 50
+) AS tbl;
+```
+
+and let's count them:
+
+```{sql}
+SELECT top_level, COUNT(*) AS n
+FROM (
+  SELECT (parts)[array_length(parts,1)] AS top_level
+  FROM (
+    SELECT string_to_array(domain, '.') AS parts
+    FROM domains
+  ) AS tbl
+) AS tbl
+GROUP BY top_level
+ORDER BY n DESC;
+```
+
+### Common Table Expressions
+
+Postgres supports Common Table Expressions (CTEs), which are similar to sub-queries.
+
+```{sql}
+WITH top_domains AS (
+  SELECT domain, COUNT(id) AS n
+  FROM queries
+  GROUP BY domain
+)
+SELECT *
+FROM top_domains
+ORDER BY n DESC
+LIMIT 5;
+```
+
+## Network Operators and Functions
+
+Postgres has built-in support for CIDR/INET types but these wouldn't be much good if there weren't functions to go along with them.
+
+For example is this IP address "les than" another one?
+
+```{sql}
+SELECT inet '192.168.1.5' < inet '192.168.1.6';
+```
+
+We can also check to see if an IP address for subnet inclusion.
+
+```{sql}
+SELECT '192.168.1.123'::INET << '192.168.1/24'::CIDR;
+```
+
+What is the smallest network which includes both of the given networks?
+
+```{sql}
+SELECT inet_merge('192.168.1.5/24', '192.168.2.5/24');
+```
+
+These are obviously very powerful tools. Let's try a more complex use case:
+
+Our client might be interested in the location of DNS queries -- do they expect network traffic to foregin countries?
+
+First let's just use a sample of the queries that were not blocked automatically.
+
+```{sql}
+SELECT *
+FROM queries TABLESAMPLE SYSTEM (1)
+WHERE
+  status IN (2, 3)
+LIMIT 50;
+```
+
+Some domains may be duplicated, so let's just combine those and get the count:
+
+```{sql}
+SELECT
+  domain,
+  COUNT(id) AS n
+FROM queries TABLESAMPLE SYSTEM (1)
+WHERE
+  status IN (2, 3)
+GROUP BY domain
+ORDER BY n DESC
+LIMIT 25
+```
+
+We can make this a CTE so it is easier to work with:
+
+```{sql}
+WITH domain_counts AS (
+  SELECT
+    domain,
+    COUNT(id) AS n
+  FROM queries TABLESAMPLE SYSTEM (1)
+  WHERE
+    status IN (2, 3)
+  GROUP BY domain
+  ORDER BY n DESC)
 SELECT
   domain,
   n,
@@ -474,19 +689,171 @@ SELECT
   subdivision_1_name AS state,
   country_name AS country,
   continent_name AS continent
-FROM (
-  SELECT
-    domain,
-    COUNT(id) AS n
-  FROM queries
-  WHERE
-    status IN (2, 3)
-  GROUP BY domain
-  ORDER BY n DESC
-  LIMIT 500
-) domain_counts
+FROM domain_counts
 JOIN domains USING (domain)
 JOIN blocks ON (domains.address << blocks.network)
 JOIN locations USING (geoname_id)
 ORDER BY n DESC;
 ```
+
+Let's flip this around and find queries to destiations outside North America.
+
+```{sql}
+WITH outside_na AS (
+  SELECT network, continent_name, country_name
+  FROM blocks
+  NATURAL JOIN locations
+)
+SELECT COUNT(*) FROM outside_na;
+```
+
+There are a lot of blocks (1,892,859) outside North America.
+
+```{sql}
+WITH outside_na AS (
+  SELECT network, continent_name, country_name
+  FROM blocks
+  NATURAL JOIN locations
+),
+domain_counts AS (
+  SELECT
+    domain,
+    COUNT(id) AS n
+  FROM queries TABLESAMPLE SYSTEM (1)
+  WHERE
+    status IN (2, 3)
+  GROUP BY domain
+  ORDER BY n DESC)
+SELECT country_name, SUM(n) AS n
+FROM domain_counts
+NATURAL JOIN domains
+JOIN outside_na ON (domains.address << outside_na.network)
+WHERE continent_name != 'North America'
+GROUP BY country_name
+ORDER BY n DESC;
+```
+
+### JSON(B)
+
+Postgres has great support for JSON(B).
+
+```{sql}
+SELECT jsonb_pretty(jsonb_strip_nulls(to_jsonb(locations)))
+FROM locations
+WHERE city_name='Ann Arbor';
+```
+
+```{sql}
+SELECT to_json(queries) FROM queries LIMIT 10;
+```
+
+Let's just make a new table with our queries as JSON:
+
+```{sql}
+CREATE TABLE queriesjson AS
+SELECT to_jsonb(queries) AS document FROM queries;
+```
+
+Congratulations we just invented NoSQL!
+
+**JSON and JSONB operators:**
+
+| Operator | Description |
+|----------|-------------|
+| ->[int] | Get JSON array element (indexed from zero, negative integers count from the end) |
+| ->[text] | Get JSON object field by key |
+| ->>[int] | Get JSON array element as text |
+| ->>[text] | Get JSON object field as text |
+| #>[text] | Get JSON object at specified path |
+| #>>[text] | Get JSON object at specified path as text |
+
+```{sql}
+SELECT document->'domain'
+FROM queriesjson
+LIMIT 5;
+```
+
+Convert back to the relational table form:
+
+```{sql}
+SELECT (jsonb_populate_record(null::queries, document)).*
+FROM queriesjson TABLESAMPLE SYSTEM (1)
+LIMIT 10;
+```
+
+## Extensions and Geospatial Data
+
+Postgres supports many extensions.
+
+```{sql}
+SELECT * FROM pg_available_extensions
+```
+
+Remember that we have geospatial data, the lat/lon in the `blocks` table!
+
+```{sql}
+CREATE EXTENSION postgis;
+```
+
+```{sql}
+SELECT ST_MakePoint(longitude, latitude) AS point
+FROM blocks TABLESAMPLE SYSTEM (1)
+LIMIT 25;
+```
+
+```{sql}
+WITH points AS (SELECT ST_MakePoint(longitude, latitude) AS point
+FROM blocks TABLESAMPLE SYSTEM (1)
+LIMIT 25)
+SELECT ST_SetSRID(point, 4326) AS point
+FROM points;
+```
+
+`ST_Distance` returns the minimum 2D Cartesian distance between two geometries in projected units (spatial ref units).
+
+```{sql}
+WITH points AS (
+  SELECT city_name, ST_SetSRID(ST_MakePoint(longitude, latitude), 4326) AS point
+  FROM blocks TABLESAMPLE BERNOULLI (1)
+  NATURAL JOIN locations
+  LIMIT 5)
+SELECT
+  pointA.city_name,
+  pointB.city_name,
+  ST_Distance(pointA.point, pointB.point) AS dist
+FROM points AS pointA
+CROSS JOIN points AS pointB;
+```
+
+We can also cities according to their coordinates using K-Means:
+
+```{sql}
+WITH points AS (
+  SELECT city_name, ST_SetSRID(ST_MakePoint(longitude, latitude), 4326) AS point
+  FROM blocks TABLESAMPLE BERNOULLI (1)
+  NATURAL JOIN locations
+  WHERE country_name = 'United States'  -- so we recognize the names
+  LIMIT 1000),
+  clusters AS (
+  SELECT ST_ClusterKMeans(point, 10) OVER() AS clusterid, city_name
+  FROM points)
+SELECT clusterid, array_agg(DISTINCT city_name) AS cities
+FROM clusters
+GROUP BY clusterid
+ORDER BY clusterid;
+```
+
+***
+
+# Maintenance
+
+```{sql}
+SELECT pg_size_pretty(pg_database_size('aacsdemo'));
+SELECT pg_size_pretty(pg_relation_size('queries'));
+SELECT relname, n_dead_tup FROM pg_stat_user_tables;
+EXPLAIN
+SELECT *
+FROM blocks
+NATURAL JOIN locations;
+```
+

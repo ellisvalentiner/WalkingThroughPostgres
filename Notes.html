@@ -286,13 +286,20 @@ localhost:5432:*:ellis:hunter1</code></pre>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb17"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> ellis <span class="kw">WITH</span> SUPERUSER LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a></code></pre></div>
+<p>Here’s a role for myself:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> ellis <span class="kw">WITH</span> LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a></code></pre></div>
 <p>I want this user to have access to the public schema so we can grant those privileges now:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">GRANT</span> <span class="kw">ALL</span> <span class="kw">PRIVILEGES</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> <span class="kw">public</span> <span class="kw">to</span> ellis;</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb18-1" title="1"><span class="kw">GRANT</span> <span class="kw">ALL</span> <span class="kw">PRIVILEGES</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> aacsdemo <span class="kw">to</span> ellis;</a></code></pre></div>
 <p>There are several different kinds of privilege: <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>, <code>RULE</code>, <code>REFERENCES</code>, <code>TRIGGER</code>, <code>CREATE</code>, <code>TEMPORARY</code>, <code>EXECUTE</code>, and <code>USAGE</code>.</p>
-<p>The application will have a separate user with lesser permissions:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> appuser LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a></code></pre></div>
-<p>Because this is a live demo I’ll also create a user with more restricted privileges:</p>
+<p>We should also create a role for our application to use. The application will have a separate user with lesser permissions:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb19-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> appuser LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span> VALID <span class="kw">UNTIL</span> <span class="st">&#39;2019-03-07&#39;</span>;</a>
+<a class="sourceLine" id="cb19-2" title="2"><span class="kw">GRANT</span> <span class="kw">INSERT</span> <span class="kw">ON</span> <span class="kw">DATABASE</span> aacsdemo <span class="kw">to</span> appuser;</a></code></pre></div>
+</div>
+<div id="creating-schemas" class="section level2">
+<h2>Creating schemas</h2>
+<p>At this point you might want to create a new schema for your data</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">CREATE</span> <span class="kw">SCHEMA</span> myschema;</a></code></pre></div>
+<p>but we’re not going to do that today.</p>
 </div>
 <div id="creating-tables" class="section level2">
 <h2>Creating tables</h2>
@@ -307,68 +314,78 @@ localhost:5432:*:ellis:hunter1</code></pre>
 <p>For each DNS query we’ll lookup the resolved IP address and then use the IP address to lookup the location.</p>
 <p>The application will populate the <code>domains</code> and <code>queries</code> tables. We will need to supply the data for <code>blocks</code> and <code>locations</code>. That data comes from MaxMind’s GeoIP2 databases, available under the Creative Commons Attribution-ShareAlike 4.0 International License.</p>
 <p><a href="https://dev.maxmind.com/geoip/geoip2/geolite2/">https://dev.maxmind.com/geoip/geoip2/geolite2/</a></p>
+<p>We can download that data here:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode bash"><code class="sourceCode bash"><a class="sourceLine" id="cb21-1" title="1"><span class="fu">wget</span> -qO- https://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip <span class="kw">|</span> <span class="fu">tar</span> -xvz</a>
+<a class="sourceLine" id="cb21-2" title="2"><span class="fu">head</span> GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv4.csv</a>
+<a class="sourceLine" id="cb21-3" title="3"><span class="fu">head</span> GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv</a></code></pre></div>
 <p>Tables are created using the <code>CREATE TABLE</code> command, providing the table name and then the column names and types.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb20-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> blocks (</a>
-<a class="sourceLine" id="cb20-2" title="2">  <span class="kw">network</span>                        CIDR,</a>
-<a class="sourceLine" id="cb20-3" title="3">  geoname_id                     <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-4" title="4">  registered_country_geoname_id  <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-5" title="5">  represented_country_geoname_id <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-6" title="6">  is_anonymous_proxy             <span class="dt">BOOLEAN</span>,</a>
-<a class="sourceLine" id="cb20-7" title="7">  is_satellite_provider          <span class="dt">BOOLEAN</span>,</a>
-<a class="sourceLine" id="cb20-8" title="8">  postal_code                    TEXT,</a>
-<a class="sourceLine" id="cb20-9" title="9">  latitude                       <span class="dt">NUMERIC</span>,</a>
-<a class="sourceLine" id="cb20-10" title="10">  longitude                      <span class="dt">NUMERIC</span>,</a>
-<a class="sourceLine" id="cb20-11" title="11">  accuracy_radius                <span class="dt">INTEGER</span></a>
-<a class="sourceLine" id="cb20-12" title="12">);</a>
-<a class="sourceLine" id="cb20-13" title="13"></a>
-<a class="sourceLine" id="cb20-14" title="14"><span class="kw">CREATE</span> <span class="kw">TABLE</span> locations (</a>
-<a class="sourceLine" id="cb20-15" title="15">  geoname_id             <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-16" title="16">  locale_code            <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
-<a class="sourceLine" id="cb20-17" title="17">  continent_code         <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
-<a class="sourceLine" id="cb20-18" title="18">  continent_name         <span class="dt">VARCHAR</span>(<span class="dv">13</span>),</a>
-<a class="sourceLine" id="cb20-19" title="19">  country_iso_code       <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
-<a class="sourceLine" id="cb20-20" title="20">  country_name           <span class="dt">VARCHAR</span>(<span class="dv">44</span>),</a>
-<a class="sourceLine" id="cb20-21" title="21">  subdivision_1_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
-<a class="sourceLine" id="cb20-22" title="22">  subdivision_1_name     <span class="dt">VARCHAR</span>(<span class="dv">52</span>),</a>
-<a class="sourceLine" id="cb20-23" title="23">  subdivision_2_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
-<a class="sourceLine" id="cb20-24" title="24">  subdivision_2_name     <span class="dt">VARCHAR</span>(<span class="dv">38</span>),</a>
-<a class="sourceLine" id="cb20-25" title="25">  city_name              <span class="dt">VARCHAR</span>(<span class="dv">63</span>),</a>
-<a class="sourceLine" id="cb20-26" title="26">  metro_code             <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-27" title="27">  <span class="kw">time_zone</span>              <span class="dt">VARCHAR</span>(<span class="dv">30</span>),</a>
-<a class="sourceLine" id="cb20-28" title="28">  is_in_european_union   <span class="dt">BOOLEAN</span></a>
-<a class="sourceLine" id="cb20-29" title="29">);</a>
-<a class="sourceLine" id="cb20-30" title="30"></a>
-<a class="sourceLine" id="cb20-31" title="31"><span class="kw">CREATE</span> <span class="kw">TABLE</span> domains (</a>
-<a class="sourceLine" id="cb20-32" title="32">  <span class="kw">domain</span>  TEXT,</a>
-<a class="sourceLine" id="cb20-33" title="33">  address INET,</a>
-<a class="sourceLine" id="cb20-34" title="34">  created <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</a>
-<a class="sourceLine" id="cb20-35" title="35">  updated <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span></a>
-<a class="sourceLine" id="cb20-36" title="36">);</a>
-<a class="sourceLine" id="cb20-37" title="37"></a>
-<a class="sourceLine" id="cb20-38" title="38"><span class="kw">CREATE</span> <span class="kw">TABLE</span> queries (</a>
-<a class="sourceLine" id="cb20-39" title="39">  <span class="kw">id</span>        <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-40" title="40">  <span class="dt">timestamp</span> <span class="dt">TIMESTAMP</span>,</a>
-<a class="sourceLine" id="cb20-41" title="41">  <span class="kw">type</span>      <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-42" title="42">  status    <span class="dt">INTEGER</span>,</a>
-<a class="sourceLine" id="cb20-43" title="43">  <span class="kw">domain</span>    TEXT,</a>
-<a class="sourceLine" id="cb20-44" title="44">  client    INET,</a>
-<a class="sourceLine" id="cb20-45" title="45">  forward   INET</a>
-<a class="sourceLine" id="cb20-46" title="46">);</a></code></pre></div>
+<p>Let’s first create a table for the locations:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> locations (</a>
+<a class="sourceLine" id="cb22-2" title="2">  geoname_id             <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</a>
+<a class="sourceLine" id="cb22-3" title="3">  locale_code            <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb22-4" title="4">  continent_code         <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb22-5" title="5">  continent_name         <span class="dt">VARCHAR</span>(<span class="dv">13</span>),</a>
+<a class="sourceLine" id="cb22-6" title="6">  country_iso_code       <span class="dt">VARCHAR</span>(<span class="dv">2</span>),</a>
+<a class="sourceLine" id="cb22-7" title="7">  country_name           <span class="dt">VARCHAR</span>(<span class="dv">44</span>),</a>
+<a class="sourceLine" id="cb22-8" title="8">  subdivision_1_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
+<a class="sourceLine" id="cb22-9" title="9">  subdivision_1_name     <span class="dt">VARCHAR</span>(<span class="dv">52</span>),</a>
+<a class="sourceLine" id="cb22-10" title="10">  subdivision_2_iso_code <span class="dt">VARCHAR</span>(<span class="dv">3</span>),</a>
+<a class="sourceLine" id="cb22-11" title="11">  subdivision_2_name     <span class="dt">VARCHAR</span>(<span class="dv">38</span>),</a>
+<a class="sourceLine" id="cb22-12" title="12">  city_name              <span class="dt">VARCHAR</span>(<span class="dv">63</span>),</a>
+<a class="sourceLine" id="cb22-13" title="13">  metro_code             <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb22-14" title="14">  <span class="kw">time_zone</span>              <span class="dt">VARCHAR</span>(<span class="dv">30</span>),</a>
+<a class="sourceLine" id="cb22-15" title="15">  is_in_european_union   <span class="dt">BOOLEAN</span></a>
+<a class="sourceLine" id="cb22-16" title="16">);</a></code></pre></div>
+<p>Next we’ll make a table for the network blocks:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> blocks (</a>
+<a class="sourceLine" id="cb23-2" title="2">  <span class="kw">network</span>                        CIDR <span class="kw">UNIQUE</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,</a>
+<a class="sourceLine" id="cb23-3" title="3">  geoname_id                     <span class="dt">INTEGER</span> <span class="kw">REFERENCES</span> locations (geoname_id),</a>
+<a class="sourceLine" id="cb23-4" title="4">  registered_country_geoname_id  <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb23-5" title="5">  represented_country_geoname_id <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb23-6" title="6">  is_anonymous_proxy             <span class="dt">BOOLEAN</span>,</a>
+<a class="sourceLine" id="cb23-7" title="7">  is_satellite_provider          <span class="dt">BOOLEAN</span>,</a>
+<a class="sourceLine" id="cb23-8" title="8">  postal_code                    TEXT,</a>
+<a class="sourceLine" id="cb23-9" title="9">  latitude                       <span class="dt">NUMERIC</span>,</a>
+<a class="sourceLine" id="cb23-10" title="10">  longitude                      <span class="dt">NUMERIC</span>,</a>
+<a class="sourceLine" id="cb23-11" title="11">  accuracy_radius                <span class="dt">INTEGER</span></a>
+<a class="sourceLine" id="cb23-12" title="12">);</a></code></pre></div>
+<p>Postgres natively supports Classless Inter-Domain Routing (CIDR) as a type! It is better to use these types instead of plain text types to store network addresses, because these types offer input error checking and specialized operators and functions.</p>
+<p>CIDR is for <em>networks</em> while INET is for hosts, however this is a minor difference.</p>
+<p>We’ll use INET in the table for domains:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> domains (</a>
+<a class="sourceLine" id="cb24-2" title="2">  <span class="kw">domain</span>  TEXT <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</a>
+<a class="sourceLine" id="cb24-3" title="3">  address INET,</a>
+<a class="sourceLine" id="cb24-4" title="4">  created <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span>,</a>
+<a class="sourceLine" id="cb24-5" title="5">  updated <span class="dt">TIMESTAMP</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span></a>
+<a class="sourceLine" id="cb24-6" title="6">);</a></code></pre></div>
+<p>Finally we’ll create the table to hold queries:</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb25-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> queries (</a>
+<a class="sourceLine" id="cb25-2" title="2">  <span class="kw">id</span>        <span class="dt">INTEGER</span> <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</a>
+<a class="sourceLine" id="cb25-3" title="3">  <span class="dt">timestamp</span> <span class="dt">TIMESTAMP</span>,</a>
+<a class="sourceLine" id="cb25-4" title="4">  <span class="kw">type</span>      <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb25-5" title="5">  status    <span class="dt">INTEGER</span>,</a>
+<a class="sourceLine" id="cb25-6" title="6">  <span class="kw">domain</span>    TEXT,</a>
+<a class="sourceLine" id="cb25-7" title="7">  client    INET,</a>
+<a class="sourceLine" id="cb25-8" title="8">  forward   INET</a>
+<a class="sourceLine" id="cb25-9" title="9">);</a></code></pre></div>
+<p>Now that we’ve got our tables it’s time to start adding data!</p>
 </div>
 <div id="loading-data" class="section level2">
 <h2>Loading data</h2>
 <p>Data can inserted in bulk using the <code>\copy</code> command. This is much more efficient than <code>INSERT</code> when loading large amounts of data.</p>
 <p>In this case the files the data are CSV files in a local directory. We can specifiy the delimiter and that the files have a header.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb21-1" title="1">\<span class="kw">copy</span> blocks <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-Blocks-IPv4.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a>
-<a class="sourceLine" id="cb21-2" title="2">\<span class="kw">copy</span> blocks <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-Blocks-IPv6.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a>
-<a class="sourceLine" id="cb21-3" title="3">\<span class="kw">copy</span> locations <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-Locations-en.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb26-1" title="1">\<span class="kw">copy</span> locations <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-CSV_20190226/GeoLite2-City-Locations-en.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a>
+<a class="sourceLine" id="cb26-2" title="2">\<span class="kw">copy</span> blocks <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv4.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a>
+<a class="sourceLine" id="cb26-3" title="3">\<span class="kw">copy</span> blocks <span class="kw">FROM</span> <span class="st">&#39;GeoLite2-City-CSV_20190226/GeoLite2-City-Blocks-IPv6.csv&#39;</span> DELIMITER <span class="st">&#39;,&#39;</span> CSV <span class="kw">HEADER</span>;</a></code></pre></div>
+<p>We <em>must</em> import the locations first because the blocks depend on it.</p>
+<p>This could take up to 3 minutes…</p>
 </div>
 <div id="indexing" class="section level2">
 <h2>Indexing</h2>
 <p>After we’ve added our data, we can add indexes to the tables. Indexes allow the database server to find and retrieve specific rows much faster than it could do without an index. However indexes add overhead.</p>
 <p>We load the data before adding indexes because indexes slow write operations and we wanted to load the data as quickly as possible. In the future we’ll be performing fewer write operations at once.</p>
 <p>The most basic way to create an index is as follows:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb22-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> blocks_geoname_idx <span class="kw">ON</span> blocks (geoname_id);</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb27-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> blocks_geoname_idx <span class="kw">ON</span> blocks (geoname_id);</a></code></pre></div>
 <p>This creates a simple B-tree index on the <code>geoname_id</code> column in the <code>blocks</code> table.</p>
 <p>Sometimes we vant to use a different index type. Postgres provides several index types: B-tree, Hash, GiST, SP-GiST, GIN and BRIN.</p>
 <table>
@@ -411,36 +428,81 @@ localhost:5432:*:ellis:hunter1</code></pre>
 </table>
 <p>If you don’t know which type to use, start with B-tree and then try others.</p>
 <p>Because we are working with network addresses we can use a <code>GIST</code> index (i.e. Generalized Search Tree):</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb23-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> blocks_network_idx <span class="kw">ON</span> blocks <span class="kw">USING</span> GIST (<span class="kw">network</span> inet_ops);</a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY blocks_network_idx <span class="kw">ON</span> blocks <span class="kw">USING</span> GIST (<span class="kw">network</span> inet_ops);</a></code></pre></div>
 <p>We can make similar indexes on other tables:</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb24-1" title="1"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> locations_geoname_idx <span class="kw">ON</span> locations (geoname_id);</a>
-<a class="sourceLine" id="cb24-2" title="2"><span class="kw">CREATE</span> <span class="kw">INDEX</span> locations_country_name_idx <span class="kw">ON</span> locations (country_name);</a>
-<a class="sourceLine" id="cb24-3" title="3"></a>
-<a class="sourceLine" id="cb24-4" title="4"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> domains_domain_idx <span class="kw">ON</span> domains (<span class="kw">domain</span>);</a>
-<a class="sourceLine" id="cb24-5" title="5"><span class="kw">CREATE</span> <span class="kw">INDEX</span> domains_address_idx <span class="kw">ON</span> domains <span class="kw">USING</span> GIST (address);</a>
-<a class="sourceLine" id="cb24-6" title="6"></a>
-<a class="sourceLine" id="cb24-7" title="7"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> queries_id_idx <span class="kw">ON</span> queries (<span class="kw">id</span>);</a>
-<a class="sourceLine" id="cb24-8" title="8"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_domain_idx <span class="kw">ON</span> queries (<span class="kw">domain</span>);</a>
-<a class="sourceLine" id="cb24-9" title="9"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_timestamp_idx <span class="kw">ON</span> queries (<span class="dt">timestamp</span>);</a>
-<a class="sourceLine" id="cb24-10" title="10"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_day_timestamp_idx <span class="kw">ON</span> queries (DATE_TRUNC(<span class="st">&#39;d&#39;</span>, <span class="dt">timestamp</span>));</a></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> CONCURRENTLY locations_geoname_idx <span class="kw">ON</span> locations (geoname_id);</a>
+<a class="sourceLine" id="cb29-2" title="2"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY locations_country_name_idx <span class="kw">ON</span> locations (country_name);</a>
+<a class="sourceLine" id="cb29-3" title="3"></a>
+<a class="sourceLine" id="cb29-4" title="4"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> CONCURRENTLY domains_domain_idx <span class="kw">ON</span> domains (<span class="kw">domain</span>);</a>
+<a class="sourceLine" id="cb29-5" title="5"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY domains_address_idx <span class="kw">ON</span> domains <span class="kw">USING</span> GIST (address inet_ops);</a>
+<a class="sourceLine" id="cb29-6" title="6"></a>
+<a class="sourceLine" id="cb29-7" title="7"><span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> CONCURRENTLY queries_id_idx <span class="kw">ON</span> queries (<span class="kw">id</span>);</a>
+<a class="sourceLine" id="cb29-8" title="8"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY queries_domain_idx <span class="kw">ON</span> queries (<span class="kw">domain</span>);</a>
+<a class="sourceLine" id="cb29-9" title="9"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY queries_timestamp_idx <span class="kw">ON</span> queries (<span class="dt">timestamp</span>);</a>
+<a class="sourceLine" id="cb29-10" title="10"><span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY queries_day_timestamp_idx <span class="kw">ON</span> queries (DATE_TRUNC(<span class="st">&#39;d&#39;</span>, <span class="dt">timestamp</span>));</a></code></pre></div>
 <p>These indexes can drastically improve query performance.</p>
 <p>Notice the last index we made includes an expression, <code>DATE_TRUC(&#39;d&#39;, timestamp)</code>, as the target. This is called an <em>expression</em> index, which lets you to index and search the result of a function on the column.</p>
 <p>Postgres has support for <em>partial</em> indexes – indexes that cover only a subset of the table.</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb25-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_domain_partial_indx</a>
-<a class="sourceLine" id="cb25-2" title="2"><span class="kw">ON</span> queries (<span class="kw">domain</span>)</a>
-<a class="sourceLine" id="cb25-3" title="3"><span class="kw">WHERE</span> status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>);</a></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb30-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_domain_partial_indx</a>
+<a class="sourceLine" id="cb30-2" title="2"><span class="kw">ON</span> queries (<span class="kw">domain</span>)</a>
+<a class="sourceLine" id="cb30-3" title="3"><span class="kw">WHERE</span> status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>);</a></code></pre></div>
 <p>Postgres also supports multi-column indexes.</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb26-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_domain_date_idx</a>
-<a class="sourceLine" id="cb26-2" title="2"><span class="kw">ON</span> queries (<span class="kw">domain</span>, DATE_TRUNC(<span class="st">&#39;d&#39;</span>, <span class="dt">timestamp</span>));</a></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">CREATE</span> <span class="kw">INDEX</span> queries_domain_date_idx</a>
+<a class="sourceLine" id="cb31-2" title="2"><span class="kw">ON</span> queries (<span class="kw">domain</span>, DATE_TRUNC(<span class="st">&#39;d&#39;</span>, <span class="dt">timestamp</span>));</a></code></pre></div>
 <p>Multi-column indexes will be used implicitly if you specify a <code>WHERE</code> clause that only includes the first column of a multi-column index.</p>
+<p>We now have all of our tables setup, we’re done!</p>
 </div>
 <div id="querying-the-data" class="section level2">
 <h2>Querying the data</h2>
-<p>Queries are easy (until they’re not).</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb27-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> queries <span class="kw">LIMIT</span> <span class="dv">10</span>;</a></code></pre></div>
+<p>Queries consist of <code>SELECT</code> followed by a list of columns or <code>*</code>, meaning every column, that come <code>FROM</code> a table (or subquery). It is a good idea to limit the number of items returned.</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb32-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> queries <span class="kw">LIMIT</span> <span class="dv">10</span>;</a></code></pre></div>
+<p>In Postgres we can efficiently sample the table using <code>TABLESAMPLE SYSTEM (numeric)</code>, where the numeric is value between 0 and 100 (inclusive). This is not purely random(!) but it is close enough for what we are doing here. For better randomness see <code>TABLESAMPLE BERNOULLI</code>.</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb33-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>) <span class="kw">LIMIT</span> <span class="dv">10</span>;</a></code></pre></div>
+<p>We can also filter the data using the <code>WHERE</code> clause.</p>
+<p>Let’s find Ann Arbor:</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb34-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> locations <span class="kw">WHERE</span> city_name <span class="op">=</span> <span class="st">&#39;Ann Arbor&#39;</span>;</a></code></pre></div>
+<p>It is <code>geoname_id</code> 4984247.</p>
+<div id="group-by-and-aggregates" class="section level3">
+<h3>Group By and Aggregates</h3>
+<p>We can calculate simple aggregates:</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb35-1" title="1"><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> locations;</a></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb36-1" title="1"><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="kw">DISTINCT</span> <span class="kw">domain</span>) <span class="kw">FROM</span> queries;</a></code></pre></div>
+<p>We can calculate aggregates by groups:</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb37-1" title="1"><span class="kw">SELECT</span> client, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> queries <span class="kw">GROUP</span> <span class="kw">BY</span> client;</a></code></pre></div>
+<p>We can use a sub-query and a window function to get the most recent domain for each client:</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb38-1" title="1"><span class="kw">SELECT</span> client, <span class="dt">timestamp</span>, <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb38-2" title="2"><span class="kw">FROM</span> (</a>
+<a class="sourceLine" id="cb38-3" title="3">  <span class="kw">SELECT</span> <span class="op">*</span>, <span class="fu">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">PARTITION</span> <span class="kw">BY</span> client <span class="kw">ORDER</span> <span class="kw">BY</span> <span class="ot">&quot;timestamp&quot;</span> <span class="kw">DESC</span>) <span class="kw">AS</span> rn</a>
+<a class="sourceLine" id="cb38-4" title="4">  <span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb38-5" title="5">) <span class="kw">AS</span> tbl</a>
+<a class="sourceLine" id="cb38-6" title="6"><span class="kw">WHERE</span> rn <span class="op">=</span> <span class="dv">1</span>;</a></code></pre></div>
+</div>
+<div id="datetime-functions" class="section level3">
+<h3>Datetime Functions</h3>
+<p>Postgres has great support for date/times.</p>
+<p>Let’s get the current timestamp:</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb39-1" title="1"><span class="kw">SELECT</span> <span class="fu">current_timestamp</span>;</a></code></pre></div>
+<p>and in our local timezone:</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb40-1" title="1"><span class="kw">SELECT</span> now() <span class="kw">AT</span> <span class="dt">TIME</span> <span class="dt">ZONE</span> <span class="st">&#39;America/Detroit&#39;</span>;</a></code></pre></div>
+<p>Let’s get recent queries:</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb41-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span></a>
+<a class="sourceLine" id="cb41-2" title="2"><span class="kw">FROM</span> queries</a>
+<a class="sourceLine" id="cb41-3" title="3"><span class="kw">WHERE</span> <span class="dt">timestamp</span> <span class="op">&gt;=</span> (<span class="fu">current_timestamp</span> <span class="op">-</span> <span class="st">&#39;10 minutes&#39;</span>:<span class="ch">:INTERVAL</span>);</a></code></pre></div>
+<p>We can also create roll-ups:</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb42-1" title="1"><span class="kw">SELECT</span> DATE_TRUNC(<span class="st">&#39;m&#39;</span>, <span class="dt">timestamp</span>) <span class="kw">AS</span> <span class="kw">minute</span>, <span class="fu">COUNT</span>(<span class="op">*</span>)</a>
+<a class="sourceLine" id="cb42-2" title="2"><span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb42-3" title="3"><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">minute</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb43-1" title="1"><span class="kw">SELECT</span> DATE_TRUNC(<span class="st">&#39;hour&#39;</span>, <span class="dt">timestamp</span>) <span class="kw">AS</span> <span class="kw">hour</span>, <span class="fu">COUNT</span>(<span class="op">*</span>)</a>
+<a class="sourceLine" id="cb43-2" title="2"><span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb43-3" title="3"><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">hour</span>;</a></code></pre></div>
+</div>
 <div id="joins" class="section level3">
 <h3>Joins</h3>
 <table>
+<colgroup>
+<col width="31%"></col>
+<col width="68%"></col>
+</colgroup>
 <thead>
 <tr class="header">
 <th>Type</th>
@@ -449,78 +511,282 @@ localhost:5432:*:ellis:hunter1</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
-<td>JOIN</td>
-<td>Join</td>
+<td>(INNER) JOIN</td>
+<td>For each row R1 of T1, the joined table has a row for each row in T2 that satisfies the join condition with R1.</td>
 </tr>
 <tr class="even">
-<td>LEFT JOIN</td>
-<td>Join</td>
+<td>LEFT (OUTER) JOIN</td>
+<td>First, an inner join is performed. Then, for each row in T1 that does not satisfy the join condition with any row in T2, a joined row is added with null values in columns of T2. Thus, the joined table always has at least one row for each row in T1.</td>
 </tr>
 <tr class="odd">
-<td>RIGHT JOIN</td>
-<td>Join</td>
+<td>RIGHT (OUTER) JOIN</td>
+<td>First, an inner join is performed. Then, for each row in T2 that does not satisfy the join condition with any row in T1, a joined row is added with null values in columns of T1. This is the converse of a left join: the result table will always have a row for each row in T2.</td>
 </tr>
 <tr class="even">
-<td>FULL JOIN</td>
-<td>Join</td>
+<td>FULL (OUTER) JOIN</td>
+<td>First, an inner join is performed. Then, for each row in T1 that does not satisfy the join condition with any row in T2, a joined row is added with null values in columns of T2. Also, for each row of T2 that does not satisfy the join condition with any row in T1, a joined row with null values in the columns of T1 is added.</td>
 </tr>
 <tr class="odd">
-<td>JOIN</td>
-<td>Join</td>
+<td>CROSS JOIN</td>
+<td>Every possible combination of rows from T1 and T2 (i.e., a Cartesian product)</td>
 </tr>
 </tbody>
 </table>
-<p>Join tables:</p>
-<div class="sourceCode" id="cb28"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb28-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span></a>
-<a class="sourceLine" id="cb28-2" title="2"><span class="kw">FROM</span> blocks</a>
-<a class="sourceLine" id="cb28-3" title="3"><span class="kw">JOIN</span> locations <span class="kw">ON</span> (blocks.geoname_id<span class="op">=</span>locations.geoname_id);</a></code></pre></div>
+<p>Here we can join a sample from the <code>blocks</code> table to the <code>locations</code> table and return a subset of their columns:</p>
+<div class="sourceCode" id="cb44"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb44-1" title="1"><span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb44-2" title="2">  blocks.<span class="kw">network</span>,</a>
+<a class="sourceLine" id="cb44-3" title="3">  blocks.latitude,</a>
+<a class="sourceLine" id="cb44-4" title="4">  blocks.longitude,</a>
+<a class="sourceLine" id="cb44-5" title="5">  locations.country_name,</a>
+<a class="sourceLine" id="cb44-6" title="6">  locations.city_name</a>
+<a class="sourceLine" id="cb44-7" title="7"><span class="kw">FROM</span> blocks</a>
+<a class="sourceLine" id="cb44-8" title="8">TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb44-9" title="9"><span class="kw">JOIN</span> locations <span class="kw">ON</span> (blocks.geoname_id<span class="op">=</span>locations.geoname_id)</a>
+<a class="sourceLine" id="cb44-10" title="10"><span class="kw">LIMIT</span> <span class="dv">25</span>;</a></code></pre></div>
 <p>If you want to join tables by the same column name, you can use the <code>USING</code> syntax instead of lengthier <code>ON</code> syntax:</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb29-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span></a>
-<a class="sourceLine" id="cb29-2" title="2"><span class="kw">FROM</span> blocks</a>
-<a class="sourceLine" id="cb29-3" title="3"><span class="kw">JOIN</span> locations <span class="kw">USING</span> (geoname_id);</a></code></pre></div>
-<div class="sourceCode" id="cb30"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb30-1" title="1"><span class="kw">SELECT</span></a>
-<a class="sourceLine" id="cb30-2" title="2">  <span class="kw">domain</span>,</a>
-<a class="sourceLine" id="cb30-3" title="3">  n,</a>
-<a class="sourceLine" id="cb30-4" title="4">  address,</a>
-<a class="sourceLine" id="cb30-5" title="5">  <span class="kw">network</span>,</a>
-<a class="sourceLine" id="cb30-6" title="6">  (latitude, longitude) <span class="kw">AS</span> coordiantes,</a>
-<a class="sourceLine" id="cb30-7" title="7">  locations.country_iso_code,</a>
-<a class="sourceLine" id="cb30-8" title="8">  city_name <span class="kw">AS</span> city,</a>
-<a class="sourceLine" id="cb30-9" title="9">  subdivision_1_name <span class="kw">AS</span> state,</a>
-<a class="sourceLine" id="cb30-10" title="10">  country_name <span class="kw">AS</span> country,</a>
-<a class="sourceLine" id="cb30-11" title="11">  continent_name <span class="kw">AS</span> continent</a>
-<a class="sourceLine" id="cb30-12" title="12"><span class="kw">FROM</span> (</a>
-<a class="sourceLine" id="cb30-13" title="13">       <span class="kw">SELECT</span></a>
-<a class="sourceLine" id="cb30-14" title="14">         <span class="kw">domain</span>,</a>
-<a class="sourceLine" id="cb30-15" title="15">         <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
-<a class="sourceLine" id="cb30-16" title="16">       <span class="kw">FROM</span> queries</a>
-<a class="sourceLine" id="cb30-17" title="17">       <span class="kw">WHERE</span></a>
-<a class="sourceLine" id="cb30-18" title="18">         status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
-<a class="sourceLine" id="cb30-19" title="19">       <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
-<a class="sourceLine" id="cb30-20" title="20">       <span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span></a>
-<a class="sourceLine" id="cb30-21" title="21">     ) domain_counts</a>
-<a class="sourceLine" id="cb30-22" title="22">     <span class="kw">JOIN</span> domains <span class="kw">USING</span> (<span class="kw">domain</span>)</a>
-<a class="sourceLine" id="cb30-23" title="23">     <span class="kw">JOIN</span> blocks <span class="kw">ON</span> (domains.address <span class="op">&lt;&lt;</span> blocks.<span class="kw">network</span>)</a>
-<a class="sourceLine" id="cb30-24" title="24">     <span class="kw">JOIN</span> locations <span class="kw">USING</span> (geoname_id)</a>
-<a class="sourceLine" id="cb30-25" title="25"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb45-1" title="1"><span class="kw">SELECT</span> <span class="kw">network</span>, latitude, longitude, country_name, city_name</a>
+<a class="sourceLine" id="cb45-2" title="2"><span class="kw">FROM</span> blocks TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb45-3" title="3"><span class="kw">JOIN</span> locations <span class="kw">USING</span> (geoname_id)</a>
+<a class="sourceLine" id="cb45-4" title="4"><span class="kw">LIMIT</span> <span class="dv">25</span>;</a></code></pre></div>
+<p>There is also a <code>NATURAL</code> join that forms a <code>USING</code> list consisting of all column names that appear in both input tables.</p>
+<div class="sourceCode" id="cb46"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb46-1" title="1"><span class="kw">SELECT</span> <span class="kw">network</span>, latitude, longitude, country_name, city_name</a>
+<a class="sourceLine" id="cb46-2" title="2"><span class="kw">FROM</span> blocks TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb46-3" title="3"><span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations</a>
+<a class="sourceLine" id="cb46-4" title="4"><span class="kw">LIMIT</span> <span class="dv">25</span>;</a></code></pre></div>
+</div>
+<div id="more-functions" class="section level3">
+<h3>More Functions</h3>
+<p>In addition to basic aggregate functions there are many processing functions.</p>
+<p>We can do things like split strings:</p>
+<div class="sourceCode" id="cb47"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb47-1" title="1"><span class="kw">SELECT</span> string_to_array(<span class="kw">domain</span>, <span class="st">&#39;.&#39;</span>) <span class="kw">AS</span> parts</a>
+<a class="sourceLine" id="cb47-2" title="2"><span class="kw">FROM</span> domains TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb47-3" title="3"><span class="kw">LIMIT</span> <span class="dv">50</span>;</a></code></pre></div>
+<p>Let’s just find the last part of each domain:</p>
+<div class="sourceCode" id="cb48"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb48-1" title="1"><span class="kw">SELECT</span> (parts)[array_length(parts,<span class="dv">1</span>)] <span class="kw">AS</span> top_level</a>
+<a class="sourceLine" id="cb48-2" title="2"><span class="kw">FROM</span> (</a>
+<a class="sourceLine" id="cb48-3" title="3">  <span class="kw">SELECT</span> string_to_array(<span class="kw">domain</span>, <span class="st">&#39;.&#39;</span>) <span class="kw">AS</span> parts</a>
+<a class="sourceLine" id="cb48-4" title="4">  <span class="kw">FROM</span> domains TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb48-5" title="5">  <span class="kw">LIMIT</span> <span class="dv">50</span></a>
+<a class="sourceLine" id="cb48-6" title="6">) <span class="kw">AS</span> tbl;</a></code></pre></div>
+<p>and let’s count them:</p>
+<div class="sourceCode" id="cb49"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb49-1" title="1"><span class="kw">SELECT</span> top_level, <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb49-2" title="2"><span class="kw">FROM</span> (</a>
+<a class="sourceLine" id="cb49-3" title="3">  <span class="kw">SELECT</span> (parts)[array_length(parts,<span class="dv">1</span>)] <span class="kw">AS</span> top_level</a>
+<a class="sourceLine" id="cb49-4" title="4">  <span class="kw">FROM</span> (</a>
+<a class="sourceLine" id="cb49-5" title="5">    <span class="kw">SELECT</span> string_to_array(<span class="kw">domain</span>, <span class="st">&#39;.&#39;</span>) <span class="kw">AS</span> parts</a>
+<a class="sourceLine" id="cb49-6" title="6">    <span class="kw">FROM</span> domains</a>
+<a class="sourceLine" id="cb49-7" title="7">  ) <span class="kw">AS</span> tbl</a>
+<a class="sourceLine" id="cb49-8" title="8">) <span class="kw">AS</span> tbl</a>
+<a class="sourceLine" id="cb49-9" title="9"><span class="kw">GROUP</span> <span class="kw">BY</span> top_level</a>
+<a class="sourceLine" id="cb49-10" title="10"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>;</a></code></pre></div>
+</div>
+<div id="common-table-expressions" class="section level3">
+<h3>Common Table Expressions</h3>
+<p>Postgres supports Common Table Expressions (CTEs), which are similar to sub-queries.</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb50-1" title="1"><span class="kw">WITH</span> top_domains <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb50-2" title="2">  <span class="kw">SELECT</span> <span class="kw">domain</span>, <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb50-3" title="3">  <span class="kw">FROM</span> queries</a>
+<a class="sourceLine" id="cb50-4" title="4">  <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb50-5" title="5">)</a>
+<a class="sourceLine" id="cb50-6" title="6"><span class="kw">SELECT</span> <span class="op">*</span></a>
+<a class="sourceLine" id="cb50-7" title="7"><span class="kw">FROM</span> top_domains</a>
+<a class="sourceLine" id="cb50-8" title="8"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span></a>
+<a class="sourceLine" id="cb50-9" title="9"><span class="kw">LIMIT</span> <span class="dv">5</span>;</a></code></pre></div>
+</div>
+</div>
+<div id="network-operators-and-functions" class="section level2">
+<h2>Network Operators and Functions</h2>
+<p>Postgres has built-in support for CIDR/INET types but these wouldn’t be much good if there weren’t functions to go along with them.</p>
+<p>For example is this IP address “les than” another one?</p>
+<div class="sourceCode" id="cb51"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb51-1" title="1"><span class="kw">SELECT</span> inet <span class="st">&#39;192.168.1.5&#39;</span> <span class="op">&lt;</span> inet <span class="st">&#39;192.168.1.6&#39;</span>;</a></code></pre></div>
+<p>We can also check to see if an IP address for subnet inclusion.</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb52-1" title="1"><span class="kw">SELECT</span> <span class="st">&#39;192.168.1.123&#39;</span>:<span class="ch">:INET</span> <span class="op">&lt;&lt;</span> <span class="st">&#39;192.168.1/24&#39;</span>:<span class="ch">:CIDR</span>;</a></code></pre></div>
+<p>What is the smallest network which includes both of the given networks?</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb53-1" title="1"><span class="kw">SELECT</span> inet_merge(<span class="st">&#39;192.168.1.5/24&#39;</span>, <span class="st">&#39;192.168.2.5/24&#39;</span>);</a></code></pre></div>
+<p>These are obviously very powerful tools. Let’s try a more complex use case:</p>
+<p>Our client might be interested in the location of DNS queries – do they expect network traffic to foregin countries?</p>
+<p>First let’s just use a sample of the queries that were not blocked automatically.</p>
+<div class="sourceCode" id="cb54"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb54-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span></a>
+<a class="sourceLine" id="cb54-2" title="2"><span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb54-3" title="3"><span class="kw">WHERE</span></a>
+<a class="sourceLine" id="cb54-4" title="4">  status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb54-5" title="5"><span class="kw">LIMIT</span> <span class="dv">50</span>;</a></code></pre></div>
+<p>Some domains may be duplicated, so let’s just combine those and get the count:</p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb55-1" title="1"><span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb55-2" title="2">  <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb55-3" title="3">  <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb55-4" title="4"><span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb55-5" title="5"><span class="kw">WHERE</span></a>
+<a class="sourceLine" id="cb55-6" title="6">  status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb55-7" title="7"><span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb55-8" title="8"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span></a>
+<a class="sourceLine" id="cb55-9" title="9"><span class="kw">LIMIT</span> <span class="dv">25</span></a></code></pre></div>
+<p>We can make this a CTE so it is easier to work with:</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb56-1" title="1"><span class="kw">WITH</span> domain_counts <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb56-2" title="2">  <span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb56-3" title="3">    <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb56-4" title="4">    <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb56-5" title="5">  <span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb56-6" title="6">  <span class="kw">WHERE</span></a>
+<a class="sourceLine" id="cb56-7" title="7">    status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb56-8" title="8">  <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb56-9" title="9">  <span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>)</a>
+<a class="sourceLine" id="cb56-10" title="10"><span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb56-11" title="11">  <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb56-12" title="12">  n,</a>
+<a class="sourceLine" id="cb56-13" title="13">  address,</a>
+<a class="sourceLine" id="cb56-14" title="14">  <span class="kw">network</span>,</a>
+<a class="sourceLine" id="cb56-15" title="15">  (latitude, longitude) <span class="kw">AS</span> coordiantes,</a>
+<a class="sourceLine" id="cb56-16" title="16">  locations.country_iso_code,</a>
+<a class="sourceLine" id="cb56-17" title="17">  city_name <span class="kw">AS</span> city,</a>
+<a class="sourceLine" id="cb56-18" title="18">  subdivision_1_name <span class="kw">AS</span> state,</a>
+<a class="sourceLine" id="cb56-19" title="19">  country_name <span class="kw">AS</span> country,</a>
+<a class="sourceLine" id="cb56-20" title="20">  continent_name <span class="kw">AS</span> continent</a>
+<a class="sourceLine" id="cb56-21" title="21"><span class="kw">FROM</span> domain_counts</a>
+<a class="sourceLine" id="cb56-22" title="22"><span class="kw">JOIN</span> domains <span class="kw">USING</span> (<span class="kw">domain</span>)</a>
+<a class="sourceLine" id="cb56-23" title="23"><span class="kw">JOIN</span> blocks <span class="kw">ON</span> (domains.address <span class="op">&lt;&lt;</span> blocks.<span class="kw">network</span>)</a>
+<a class="sourceLine" id="cb56-24" title="24"><span class="kw">JOIN</span> locations <span class="kw">USING</span> (geoname_id)</a>
+<a class="sourceLine" id="cb56-25" title="25"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>;</a></code></pre></div>
+<p>Let’s flip this around and find queries to destiations outside North America.</p>
+<div class="sourceCode" id="cb57"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb57-1" title="1"><span class="kw">WITH</span> outside_na <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb57-2" title="2">  <span class="kw">SELECT</span> <span class="kw">network</span>, continent_name, country_name</a>
+<a class="sourceLine" id="cb57-3" title="3">  <span class="kw">FROM</span> blocks</a>
+<a class="sourceLine" id="cb57-4" title="4">  <span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations</a>
+<a class="sourceLine" id="cb57-5" title="5">)</a>
+<a class="sourceLine" id="cb57-6" title="6"><span class="kw">SELECT</span> <span class="fu">COUNT</span>(<span class="op">*</span>) <span class="kw">FROM</span> outside_na;</a></code></pre></div>
+<p>There are a lot of blocks (1,892,859) outside North America.</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb58-1" title="1"><span class="kw">WITH</span> outside_na <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb58-2" title="2">  <span class="kw">SELECT</span> <span class="kw">network</span>, continent_name, country_name</a>
+<a class="sourceLine" id="cb58-3" title="3">  <span class="kw">FROM</span> blocks</a>
+<a class="sourceLine" id="cb58-4" title="4">  <span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations</a>
+<a class="sourceLine" id="cb58-5" title="5">),</a>
+<a class="sourceLine" id="cb58-6" title="6">domain_counts <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb58-7" title="7">  <span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb58-8" title="8">    <span class="kw">domain</span>,</a>
+<a class="sourceLine" id="cb58-9" title="9">    <span class="fu">COUNT</span>(<span class="kw">id</span>) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb58-10" title="10">  <span class="kw">FROM</span> queries TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb58-11" title="11">  <span class="kw">WHERE</span></a>
+<a class="sourceLine" id="cb58-12" title="12">    status <span class="kw">IN</span> (<span class="dv">2</span>, <span class="dv">3</span>)</a>
+<a class="sourceLine" id="cb58-13" title="13">  <span class="kw">GROUP</span> <span class="kw">BY</span> <span class="kw">domain</span></a>
+<a class="sourceLine" id="cb58-14" title="14">  <span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>)</a>
+<a class="sourceLine" id="cb58-15" title="15"><span class="kw">SELECT</span> country_name, <span class="fu">SUM</span>(n) <span class="kw">AS</span> n</a>
+<a class="sourceLine" id="cb58-16" title="16"><span class="kw">FROM</span> domain_counts</a>
+<a class="sourceLine" id="cb58-17" title="17"><span class="kw">NATURAL</span> <span class="kw">JOIN</span> domains</a>
+<a class="sourceLine" id="cb58-18" title="18"><span class="kw">JOIN</span> outside_na <span class="kw">ON</span> (domains.address <span class="op">&lt;&lt;</span> outside_na.<span class="kw">network</span>)</a>
+<a class="sourceLine" id="cb58-19" title="19"><span class="kw">WHERE</span> continent_name <span class="op">!=</span> <span class="st">&#39;North America&#39;</span></a>
+<a class="sourceLine" id="cb58-20" title="20"><span class="kw">GROUP</span> <span class="kw">BY</span> country_name</a>
+<a class="sourceLine" id="cb58-21" title="21"><span class="kw">ORDER</span> <span class="kw">BY</span> n <span class="kw">DESC</span>;</a></code></pre></div>
+<div id="jsonb" class="section level3">
+<h3>JSON(B)</h3>
+<p>Postgres has great support for JSON(B).</p>
+<div class="sourceCode" id="cb59"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb59-1" title="1"><span class="kw">SELECT</span> jsonb_pretty(jsonb_strip_nulls(to_jsonb(locations)))</a>
+<a class="sourceLine" id="cb59-2" title="2"><span class="kw">FROM</span> locations</a>
+<a class="sourceLine" id="cb59-3" title="3"><span class="kw">WHERE</span> city_name<span class="op">=</span><span class="st">&#39;Ann Arbor&#39;</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb60"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb60-1" title="1"><span class="kw">SELECT</span> to_json(queries) <span class="kw">FROM</span> queries <span class="kw">LIMIT</span> <span class="dv">10</span>;</a></code></pre></div>
+<p>Let’s just make a new table with our queries as JSON:</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb61-1" title="1"><span class="kw">CREATE</span> <span class="kw">TABLE</span> queriesjson <span class="kw">AS</span></a>
+<a class="sourceLine" id="cb61-2" title="2"><span class="kw">SELECT</span> to_jsonb(queries) <span class="kw">AS</span> document <span class="kw">FROM</span> queries;</a></code></pre></div>
+<p>Congratulations we just invented NoSQL!</p>
+<p><strong>JSON and JSONB operators:</strong></p>
+<table>
+<colgroup>
+<col width="43%"></col>
+<col width="56%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th>Operator</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>-&gt;[int]</td>
+<td>Get JSON array element (indexed from zero, negative integers count from the end)</td>
+</tr>
+<tr class="even">
+<td>-&gt;[text]</td>
+<td>Get JSON object field by key</td>
+</tr>
+<tr class="odd">
+<td>-&gt;&gt;[int]</td>
+<td>Get JSON array element as text</td>
+</tr>
+<tr class="even">
+<td>-&gt;&gt;[text]</td>
+<td>Get JSON object field as text</td>
+</tr>
+<tr class="odd">
+<td>#&gt;[text]</td>
+<td>Get JSON object at specified path</td>
+</tr>
+<tr class="even">
+<td>#&gt;&gt;[text]</td>
+<td>Get JSON object at specified path as text</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb62"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb62-1" title="1"><span class="kw">SELECT</span> document<span class="op">-&gt;</span><span class="st">&#39;domain&#39;</span></a>
+<a class="sourceLine" id="cb62-2" title="2"><span class="kw">FROM</span> queriesjson</a>
+<a class="sourceLine" id="cb62-3" title="3"><span class="kw">LIMIT</span> <span class="dv">5</span>;</a></code></pre></div>
+<p>Convert back to the relational table form:</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb63-1" title="1"><span class="kw">SELECT</span> (jsonb_populate_record(<span class="kw">null</span>:<span class="ch">:queries</span>, document)).<span class="op">*</span></a>
+<a class="sourceLine" id="cb63-2" title="2"><span class="kw">FROM</span> queriesjson TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb63-3" title="3"><span class="kw">LIMIT</span> <span class="dv">10</span>;</a></code></pre></div>
+</div>
+</div>
+<div id="extensions-and-geospatial-data" class="section level2">
+<h2>Extensions and Geospatial Data</h2>
+<p>Postgres supports many extensions.</p>
+<div class="sourceCode" id="cb64"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb64-1" title="1"><span class="kw">SELECT</span> <span class="op">*</span> <span class="kw">FROM</span> pg_available_extensions</a></code></pre></div>
+<p>Remember that we have geospatial data, the lat/lon in the <code>blocks</code> table!</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb65-1" title="1"><span class="kw">CREATE</span> EXTENSION postgis;</a></code></pre></div>
+<div class="sourceCode" id="cb66"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb66-1" title="1"><span class="kw">SELECT</span> ST_MakePoint(longitude, latitude) <span class="kw">AS</span> point</a>
+<a class="sourceLine" id="cb66-2" title="2"><span class="kw">FROM</span> blocks TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb66-3" title="3"><span class="kw">LIMIT</span> <span class="dv">25</span>;</a></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb67-1" title="1"><span class="kw">WITH</span> points <span class="kw">AS</span> (<span class="kw">SELECT</span> ST_MakePoint(longitude, latitude) <span class="kw">AS</span> point</a>
+<a class="sourceLine" id="cb67-2" title="2"><span class="kw">FROM</span> blocks TABLESAMPLE <span class="kw">SYSTEM</span> (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb67-3" title="3"><span class="kw">LIMIT</span> <span class="dv">25</span>)</a>
+<a class="sourceLine" id="cb67-4" title="4"><span class="kw">SELECT</span> ST_SetSRID(point, <span class="dv">4326</span>) <span class="kw">AS</span> point</a>
+<a class="sourceLine" id="cb67-5" title="5"><span class="kw">FROM</span> points;</a></code></pre></div>
+<p><code>ST_Distance</code> returns the minimum 2D Cartesian distance between two geometries in projected units (spatial ref units).</p>
+<div class="sourceCode" id="cb68"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb68-1" title="1"><span class="kw">WITH</span> points <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb68-2" title="2">  <span class="kw">SELECT</span> city_name, ST_SetSRID(ST_MakePoint(longitude, latitude), <span class="dv">4326</span>) <span class="kw">AS</span> point</a>
+<a class="sourceLine" id="cb68-3" title="3">  <span class="kw">FROM</span> blocks TABLESAMPLE BERNOULLI (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb68-4" title="4">  <span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations</a>
+<a class="sourceLine" id="cb68-5" title="5">  <span class="kw">LIMIT</span> <span class="dv">5</span>)</a>
+<a class="sourceLine" id="cb68-6" title="6"><span class="kw">SELECT</span></a>
+<a class="sourceLine" id="cb68-7" title="7">  pointA.city_name,</a>
+<a class="sourceLine" id="cb68-8" title="8">  pointB.city_name,</a>
+<a class="sourceLine" id="cb68-9" title="9">  ST_Distance(pointA.point, pointB.point) <span class="kw">AS</span> dist</a>
+<a class="sourceLine" id="cb68-10" title="10"><span class="kw">FROM</span> points <span class="kw">AS</span> pointA</a>
+<a class="sourceLine" id="cb68-11" title="11"><span class="kw">CROSS</span> <span class="kw">JOIN</span> points <span class="kw">AS</span> pointB;</a></code></pre></div>
+<p>We can also cities according to their coordinates using K-Means:</p>
+<div class="sourceCode" id="cb69"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb69-1" title="1"><span class="kw">WITH</span> points <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb69-2" title="2">  <span class="kw">SELECT</span> city_name, ST_SetSRID(ST_MakePoint(longitude, latitude), <span class="dv">4326</span>) <span class="kw">AS</span> point</a>
+<a class="sourceLine" id="cb69-3" title="3">  <span class="kw">FROM</span> blocks TABLESAMPLE BERNOULLI (<span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb69-4" title="4">  <span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations</a>
+<a class="sourceLine" id="cb69-5" title="5">  <span class="kw">WHERE</span> country_name <span class="op">=</span> <span class="st">&#39;United States&#39;</span>  <span class="co">-- so we recognize the names</span></a>
+<a class="sourceLine" id="cb69-6" title="6">  <span class="kw">LIMIT</span> <span class="dv">1000</span>),</a>
+<a class="sourceLine" id="cb69-7" title="7">  clusters <span class="kw">AS</span> (</a>
+<a class="sourceLine" id="cb69-8" title="8">  <span class="kw">SELECT</span> ST_ClusterKMeans(point, <span class="dv">10</span>) <span class="kw">OVER</span>() <span class="kw">AS</span> clusterid, city_name</a>
+<a class="sourceLine" id="cb69-9" title="9">  <span class="kw">FROM</span> points)</a>
+<a class="sourceLine" id="cb69-10" title="10"><span class="kw">SELECT</span> clusterid, array_agg(<span class="kw">DISTINCT</span> city_name) <span class="kw">AS</span> cities</a>
+<a class="sourceLine" id="cb69-11" title="11"><span class="kw">FROM</span> clusters</a>
+<a class="sourceLine" id="cb69-12" title="12"><span class="kw">GROUP</span> <span class="kw">BY</span> clusterid</a>
+<a class="sourceLine" id="cb69-13" title="13"><span class="kw">ORDER</span> <span class="kw">BY</span> clusterid;</a></code></pre></div>
 <hr />
 </div>
 </div>
-</div>
-<div id="basic-administration" class="section level1">
-<h1>Basic Administration</h1>
-<div id="creating-roles-1" class="section level3">
-<h3>Creating Roles</h3>
-<p>Roles are “users” and “groups”.</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb31-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> dbadmin NOLOGIN NOINHERIT SUPERUSER;</a>
-<a class="sourceLine" id="cb31-2" title="2"><span class="kw">CREATE</span> <span class="kw">ROLE</span> bob;</a>
-<a class="sourceLine" id="cb31-3" title="3"><span class="kw">GRANT</span> dbadmin <span class="kw">TO</span> bob;</a></code></pre></div>
-<div class="sourceCode" id="cb32"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb32-1" title="1"><span class="kw">CREATE</span> <span class="kw">ROLE</span> datascientist;</a>
-<a class="sourceLine" id="cb32-2" title="2"><span class="kw">ALTER</span> <span class="kw">DEFAULT</span> PERMISSIONS <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">TABLES</span> <span class="kw">TO</span> datascientist;</a>
-<a class="sourceLine" id="cb32-3" title="3"><span class="kw">GRANT</span> <span class="kw">SELECT</span> <span class="kw">ON</span> <span class="kw">ALL</span> <span class="kw">TABLES</span> <span class="kw">IN</span> <span class="kw">SCHEMA</span> <span class="kw">public</span> <span class="kw">TO</span> datascientist;</a>
-<a class="sourceLine" id="cb32-4" title="4"><span class="kw">CREATE</span> <span class="kw">ROLE</span> julia LOGIN <span class="kw">PASSWORD</span> <span class="st">&#39;hunter1&#39;</span>;</a>
-<a class="sourceLine" id="cb32-5" title="5"><span class="kw">GRANT</span> datascientist <span class="kw">TO</span> julia;</a></code></pre></div>
-</div>
+<div id="maintenance" class="section level1">
+<h1>Maintenance</h1>
+<div class="sourceCode" id="cb70"><pre class="sourceCode sql"><code class="sourceCode sql"><a class="sourceLine" id="cb70-1" title="1"><span class="kw">SELECT</span> pg_size_pretty(pg_database_size(<span class="st">&#39;aacsdemo&#39;</span>));</a>
+<a class="sourceLine" id="cb70-2" title="2"><span class="kw">SELECT</span> pg_size_pretty(pg_relation_size(<span class="st">&#39;queries&#39;</span>));</a>
+<a class="sourceLine" id="cb70-3" title="3"><span class="kw">SELECT</span> relname, n_dead_tup <span class="kw">FROM</span> pg_stat_user_tables;</a>
+<a class="sourceLine" id="cb70-4" title="4"><span class="kw">EXPLAIN</span></a>
+<a class="sourceLine" id="cb70-5" title="5"><span class="kw">SELECT</span> <span class="op">*</span></a>
+<a class="sourceLine" id="cb70-6" title="6"><span class="kw">FROM</span> blocks</a>
+<a class="sourceLine" id="cb70-7" title="7"><span class="kw">NATURAL</span> <span class="kw">JOIN</span> locations;</a></code></pre></div>
 </div>
 </section>
 

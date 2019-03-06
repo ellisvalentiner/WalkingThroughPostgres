@@ -4,10 +4,9 @@ author: "Ellis Valentiner"
 date: "Wed Mar. 6th, 2019"
 output:
   xaringan::moon_reader:
-    css: ["default", "css/custom.css", "css/terminal.css", "https://use.fontawesome.com/releases/v5.0.12/css/all.css"]
+    css: ["default", "https://use.fontawesome.com/releases/v5.7.2/css/all.css", "css/custom.css"]
     lib_dir: libs
     nature:
-      beforeInit: ["https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js", "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.5/highlight.min.js",  "https://mattboldt.com/demos/typed-js/js/typed.custom.js", "js/custom.js"]
       highlightStyle: github
       highlightLines: true
       countIncrementalSlides: false
@@ -36,7 +35,7 @@ Walking Through Postgres
 class: center, middle, shadow
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #ffffffD9, #ffffff73), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
+background-image: linear-gradient(to right, #ffffffe0 40%, #ffffffa0), url("http://d2ouvy59p0dg6k.cloudfront.net/img/original/original_ww187785.jpg")
 
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE, crayon.enabled = TRUE)
@@ -106,7 +105,7 @@ source: stackoverflow.com
 
 2018 Stack Overflow Developer Survey
 
----
+--
 class: left, bottom
 background-position: top
 background-size: contain
@@ -120,7 +119,7 @@ source: stackoverflow.com
 
 2018 Stack Overflow Developer Survey
 
----
+--
 class: left, bottom
 background-position: top
 background-size: contain
@@ -174,6 +173,10 @@ background-size: cover
 background-position: center
 background-image: url("images/oracle.png")
 
+<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
+source: oracle.com
+</div>
+
 --
 class: center, middle, inverse
 background-size: cover
@@ -181,10 +184,6 @@ background-position: center
 background-image: linear-gradient(#000000c3, #000000c3), url("images/oracle.png")
 
 ## .accent-pink[You may not disclose results of any Program benchmark tests without Oracle’s prior consent.]
-
-<div style="text-align: left; bottom: 12px; position: absolute; left: 20px; opacity: 0.5;">
-source: oracle.com
-</div>
 
 ???
 
@@ -214,7 +213,7 @@ background-image: linear-gradient(#000000c3, #000000c3), url("https://images.uns
 
 --
 
-- ### SQL standard compliant
+- ### compliant with SQL:2016 standard
 
 --
 
@@ -295,45 +294,10 @@ class: center, middle
 class: center, middle, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #000000c3, #000000c3), url('https://www.klaustiedge.com/wp-content/uploads/W60_Color_Elephant-Herd%C2%A9-AfricanFineArt.co_.za_.jpg')
+background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(to right, #785F027a, #EDBD0F60), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
-<div style="font-size: 120px; font-family: Lato; color: #E91E63">
-SQL in 60 seconds
-</div>
-
----
-class: top, left, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to right, #000000c3, #000000c3), url('https://www.klaustiedge.com/wp-content/uploads/W60_Color_Elephant-Herd%C2%A9-AfricanFineArt.co_.za_.jpg')
-
-# .accent-pink[**S**]tructured .accent-pink[**Q**]uery .accent-pink[**L**]anguage
-
-<div class="text-editor-wrap">
-	<div class="title-bar" style="color:#000000;">
-	  <span class="title">postgres — zsh — 16x<span class="terminal-height">9</span></span>
-  </div>
-	<div class="text-body">
-		psql> <span id="typed"></span>
-	</div>
-</div>
-
-???
-
-SQL was developed at IBM in 1974
-
-"Released" in 1986 as American National Standards Institute (ANSI) and ISO standards.
-
-Updated in 1989, 1992, 1996, 1999, 2003, 2006, 2008, 2011, and 2016
-
----
-class: center, middle, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
-
-<div style="font-size: 80px; font-family: Lato">
-Example: DNS Data
+<div style="font-size: 120px; font-family: Lato">
+Example
 </div>
 
 ---
@@ -341,25 +305,25 @@ name: dns-demo
 class: top, left, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(to right, #785F027a, #EDBD0F60), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
 # Background
 
-### We have a client who monitors DNS queries on their network to block malicious traffic, identify interesting patterns, etc.
+### We have a client who monitors networks to block malicious traffic, identify interesting patterns, etc.
 
 --
 
-### Our client wants a database to store DNS queries.
+### The client has focused on incoming traffic, but what about outgoing traffic?
 
 --
 
-### Finally, our client wants to query the database for all DNS queries to hosts outside of North America.
+### Our client wants us to design a database to store outgoing DNS queries.
 
 ---
 class: top, left, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(to right, #785F027a, #EDBD0F60), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
 # Background
 
@@ -383,7 +347,7 @@ Geographic information will be used to map IP addresses to world locations
 class: top, left, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(to right, #785F027a, #EDBD0F60), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
 # Our Tasks
 
@@ -396,7 +360,7 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 
 --
 
-### 3. Load historic data from the client
+### 3. Load reference data
 
 --
 
@@ -412,10 +376,10 @@ background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://
 class: center, middle, inverse
 background-position: center
 background-size: cover
-background-image: linear-gradient(to right, #785F02aa, #EDBD0Fdd), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
+background-image: linear-gradient(20deg, #000000a0, #00000090), linear-gradient(to right, #785F027a, #EDBD0F60), url('https://assets.nrdc.org/sites/default/files/styles/full_content--retina/public/media-uploads/wlds43_654640_2400.jpg?itok=LbhnLIk9')
 
 <div style="font-size: 120px; font-family: Lato">
-Demo
+Walkthrough
 </div>
 
 ---
@@ -440,7 +404,7 @@ background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient
 
 - ### ACID compliant
 
-- ### SQL standard compliant
+- ### compliant with SQL:2016 standard
 
 - ### open source
 
@@ -454,15 +418,17 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient(220deg, #000000a0, #000000a0), url("https://images.ctfassets.net/22n7d68fswlw/2lUV1X3JY8SM24oe4mG6GI/7312b2a9a87c723cb4c91403eb1877f6/elephantqueen_0HERO")
 
-# Postgres is
+# Postgres has many cool features
 
-- ### an object relational database management system
+- ### Date/time functions and operators
 
-- ### ACID-compliant (Atomicity, Consistency, Isolation, Durability)
+- ### Network address types
 
-- ### conforms to 160 of 179 the SQL:2011 features
+- ### JSON(b) support
 
-- ### open source, free as in freedom, and free as in price
+- ### Extensions
+
+- ### and more!
 
 ---
 class: inverse
@@ -472,9 +438,11 @@ background-image: linear-gradient(220deg, #f0dc8d66, #ff1c3e66), linear-gradient
 
 # Resources
 
-### Citus Data - citusdata.com
+### Citus Data - [citusdata.com](citusdata.com)
 
-### Postgres Guide - postgresguide.com
+### Craig Kerstien's blog - [craigkerstiens.com](craigkerstiens.com)
+
+### Postgres Guide - [postgresguide.com](postgresguide.com)
 
 ---
 class: center, inverse
@@ -482,7 +450,7 @@ background-position: center
 background-size: cover
 background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
 
-# About me
+# Get in touch
 
 .top[
 .pull-left[
@@ -514,37 +482,3 @@ background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.
 <div style="font-size: 160px; font-family: Lato">
 Questions?
 </div>
-
----
-class: center, middle, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
-
-# Example: Stock Market Data
-
-???
-
-Photo by Yathin S Krishnappa. Downloaded from Wikimedia. Licensed under the Creative Commons Attribution-Share Alike 3.0 Unported license.
-
-Arrays, Enum, JSON(B), GIN
-
----
-class: top, left, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to top, #666491aa, #1B2964aa), url("https://i.redd.it/u7a30lemdo221.jpg")
-
-# Stock Market Data
-
-### Daily prices for companies in the S&P 500
-
-### 1998 through July 31st, 2013
-
----
-class: center, middle, inverse
-background-position: center
-background-size: cover
-background-image: linear-gradient(to top, #666491aa, #1B2964aa), linear-gradient(to top, #000000aa, #000000aa), url("https://i.redd.it/u7a30lemdo221.jpg")
-
-# Demo
